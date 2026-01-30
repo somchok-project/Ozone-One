@@ -2,6 +2,58 @@
 
 This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
 
+## How to use Prisma and run Next.js
+
+### 1. ติดตั้ง dependencies
+
+```bash
+npm install
+```
+
+### 2. ตั้งค่าและใช้งาน Prisma
+
+- แก้ไขการเชื่อมต่อฐานข้อมูลในไฟล์ `prisma/schema.prisma`
+- รัน migration เพื่อสร้างตารางในฐานข้อมูล
+
+```bash
+npx prisma migrate dev
+```
+
+### (ทางเลือก) ใช้ db push เพื่อ sync schema โดยไม่สร้าง migration
+
+```bash
+npx prisma db push
+```
+
+- สร้าง Prisma Client
+
+```bash
+npx prisma generate
+```
+
+
+
+- เปิด Prisma Studio (GUI สำหรับจัดการฐานข้อมูล)
+
+```bash
+npx prisma studio
+```
+
+- run seed ต้องสร้างใน prisma/seed
+```bash
+npx prisma db seed 
+```
+
+### 3. รันเซิร์ฟเวอร์ Next.js
+
+```bash
+npm run dev
+```
+
+แอปจะรันที่ [http://localhost:3000](http://localhost:3000)
+
+---
+
 ## What's next? How do I make an app with this?
 
 We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
