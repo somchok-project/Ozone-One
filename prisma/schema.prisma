@@ -15,61 +15,80 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
 
-    createdBy   User   @relation(fields: [createdById], references: [id])
-    createdById String
 
-    @@index([name])
-}
-
-// Necessary for Next auth
-model Account {
-    id                       String  @id @default(cuid())
-    userId                   String
-    type                     String
-    provider                 String
-    providerAccountId        String
-    refresh_token            String? // @db.Text
-    access_token             String? // @db.Text
-    expires_at               Int?
-    token_type               String?
-    scope                    String?
-    id_token                 String? // @db.Text
-    session_state            String?
-    user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-    refresh_token_expires_in Int?
-
-    @@unique([provider, providerAccountId])
-}
-
-model Session {
-    id           String   @id @default(cuid())
-    sessionToken String   @unique
-    userId       String
-    expires      DateTime
-    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum Role {
+    USER
+    ADMIN
 }
 
 model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
-    image         String?
-    accounts      Account[]
-    sessions      Session[]
-    posts         Post[]
+    id                String     @id @default(uuid()) @db.Uuid
+    phone_number      String
+    password          String
+    email             String
+    role              Role
+    bookings          Booking[]
+    booths            Booth[]
+    reviews           Review[]
 }
 
-model VerificationToken {
-    identifier String
-    token      String   @unique
-    expires    DateTime
+enum BoothType {
+    FREE
+    BOOKING
+}
 
-    @@unique([identifier, token])
+model Booth {
+    id                String     @id @default(uuid()) @db.Uuid
+    name              String
+    price             Float
+    is_available      Boolean    @default(false)
+    type              BoothType
+    latitude          Decimal    @db.Decimal(10, 8)
+    longitude         Decimal    @db.Decimal(11, 8)
+    images            Image[]
+    bookings          Booking[]
+    // Relation with User model
+    user_id           String     @db.Uuid
+    user              User       @relation(fields: [user_id], references: [id])
+}
+
+model Image {
+    id                String     @id @default(uuid()) @db.Uuid
+    path              String
+    // Relation with Booth model
+    booth_id          String     @db.Uuid
+    booth             Booth      @relation(fields: [booth_id], references: [id])
+}
+
+enum PaymentStatus {
+    PENDING
+    SUCCESS
+    CANCEL
+}
+
+model Booking {
+    id                String     @id @default(uuid()) @db.Uuid
+    start_date        DateTime
+    end_date          DateTime
+    total_price       Float
+    payment_status    PaymentStatus
+    payment_slip_url  String
+    // Relation with User model
+    user_id           String     @db.Uuid
+    user              User       @relation(fields: [user_id], references: [id])
+    // Relation with Booth model
+    booth_id          String     @db.Uuid
+    booth             Booth      @relation(fields: [booth_id], references: [id])
+}
+
+model Review {
+    id                String     @id @default(uuid()) @db.Uuid
+    // Example rting: 4.5, 5.0, 2.5, ...
+    rating            Decimal    @db.Decimal(1, 1)
+    comment           String?
+    created_at        DateTime   @default(now())
+    // Relation with User model
+    user_id           String     @db.Uuid
+    user              User       @relation(fields: [user_id], references: [id])
 }
