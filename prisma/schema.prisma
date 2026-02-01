@@ -61,13 +61,18 @@ model Image {
     booth             Booth      @relation(fields: [booth_id], references: [id])
 }
 
-//TODO: Correct payment_status type
+enum PaymentStatus {
+    PENDING
+    SUCCESS
+    CANCEL
+}
+
 model Booking {
     id                String     @id @default(uuid()) @db.Uuid
     start_date        DateTime
     end_date          DateTime
     total_price       Float
-    payment_status    String
+    payment_status    PaymentStatus
     payment_slip_url  String
     // Relation with User model
     user_id           String     @db.Uuid
@@ -79,7 +84,8 @@ model Booking {
 
 model Review {
     id                String     @id @default(uuid()) @db.Uuid
-    rating            Int
+    // Example rting: 4.5, 5.0, 2.5, ...
+    rating            Decimal    @db.Decimal(1, 1)
     comment           String?
     created_at        DateTime   @default(now())
     // Relation with User model
