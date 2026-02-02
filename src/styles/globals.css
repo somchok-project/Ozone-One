@@ -4,6 +4,4 @@
   --font-sans: var(--font-noto-sans-thai), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   
-  /* เพิ่มคลาสฟอนต์สำหรับ Noto Sans Thai โดยเฉพาะ */
-  --font-noto-sans-thai: var(--font-noto-sans-thai);
 }
