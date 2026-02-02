@@ -28,7 +28,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="th" className={`${geist.variable} ${notoSansThai.variable}`}>
-      <body className="min-h-screen bg-gray-50 font-noto-sans-thai">
+      <body className="min-h-screen bg-gray-50">
         <TRPCReactProvider>
           <Navbar />
           <main>{children}</main>
