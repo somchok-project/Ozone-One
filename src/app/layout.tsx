@@ -4,7 +4,6 @@ import { type Metadata } from "next";
 import { Geist, Noto_Sans_Thai } from "next/font/google";
 
 import { TRPCReactProvider } from "@/trpc/react";
-import { Navbar } from "@/components/ui/navbar";
 
 export const metadata: Metadata = {
   title: "SpotRent - ระบบจัดการบูธ",
