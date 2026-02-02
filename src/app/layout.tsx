@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Noto_Sans_Thai } from "next/font/google";
 
 import { TRPCReactProvider } from "@/trpc/react";
 import { Navbar } from "@/components/ui/navbar";
@@ -17,12 +17,18 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
+const notoSansThai = Noto_Sans_Thai({
+  subsets: ["thai", "latin"],
+  variable: "--font-noto-sans-thai",
+  weight: ["300", "400", "500", "600", "700"],
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable}`}>
-      <body className="min-h-screen bg-gray-50">
+    <html lang="th" className={`${geist.variable} ${notoSansThai.variable}`}>
+      <body className="min-h-screen bg-gray-50 font-noto-sans-thai">
         <TRPCReactProvider>
           <Navbar />
           <main>{children}</main>
