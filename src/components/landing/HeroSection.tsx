@@ -101,7 +101,8 @@ export default function HeroSection() {
 
             <p className="mb-8 text-lg leading-relaxed font-light text-gray-600 md:text-xl lg:max-w-md">
               ยกระดับประสบการณ์การค้าขายสู่มาตรฐานใหม่
-              ในทำเลที่ถูกออกแบบอย่างพิถีพิถันเพื่อ "ความสำเร็จ" ของคุณ
+              ในทำเลที่ถูกออกแบบอย่างพิถีพิถันเพื่อ &ldquo;ความสำเร็จ&rdquo;
+              ของคุณ
             </p>
 
             {/* Buttons */}
@@ -172,7 +173,7 @@ export default function HeroSection() {
 
             {/* Right Top Image */}
             <div className="absolute top-8 right-4 z-10 h-[180px] w-[180px] rotate-3 overflow-hidden rounded-3xl bg-white/80 p-2 shadow-xl shadow-gray-200/50 backdrop-blur-md transition-all duration-500 hover:z-30 hover:scale-105 hover:rotate-0 md:top-16 md:right-16 md:h-[220px] md:w-[220px]">
-              <div className="absolute -top-0 -right-0 rotate-45 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 text-white shadow-md">
+              <div className="absolute -top-0 -right-0 flex h-10 w-10 rotate-45 items-center justify-center rounded-full bg-orange-500 text-white shadow-md">
                 <svg
                   className="h-5 w-5"
                   fill="none"
@@ -213,7 +214,7 @@ export default function HeroSection() {
             </div>
 
             <div className="absolute bottom-10 left-10 -z-10 grid grid-cols-4 gap-2 opacity-20">
-              {[...Array(16)].map((_, i) => (
+              {Array.from({ length: 16 }).map((_, i) => (
                 <div
                   key={i}
                   className="h-1.5 w-1.5 rounded-full bg-orange-600"
