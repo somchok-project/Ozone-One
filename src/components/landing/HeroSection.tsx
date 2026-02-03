@@ -202,10 +202,12 @@ export default function HeroSection() {
             {/* Bottom Right Image */}
             <div className="absolute right-2 bottom-12 z-30 h-[140px] w-[200px] -rotate-3 overflow-hidden rounded-3xl bg-white/80 p-2 shadow-xl shadow-orange-100/50 backdrop-blur-md transition-all duration-500 hover:z-40 hover:scale-105 hover:rotate-0 md:right-8 md:bottom-20 md:h-[180px] md:w-[260px]">
               <div className="h-full w-full overflow-hidden rounded-2xl">
-                <img
-                  src="https://images.unsplash.com/photo-1533900298318-6b8da08a523e?q=80&w=600"
+                <Image
+                  src="/images/bg-ตลาดโอโซนวัน4.png"
                   alt="Concert"
                   className="h-full w-full object-cover"
+                  width={200}
+                  height={200}
                 />
               </div>
             </div>
