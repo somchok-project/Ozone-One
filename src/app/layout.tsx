@@ -30,7 +30,7 @@ export default function RootLayout({
     <html lang="th" className={`${geist.variable} ${notoSansThai.variable}`}>
       <body className="min-h-screen bg-gray-50">
         <TRPCReactProvider>
-          <Navbar />
+          {/* <Navbar /> */}
           <main>{children}</main>
         </TRPCReactProvider>
       </body>
