@@ -40,7 +40,7 @@ export default function Navbar() {
           {/* 3. Auth Buttons */}
           <div className="flex items-center space-x-3">
             {/* Login: Minimal Ghost Button */}
-            <Link href="/login">
+            <Link href="/auth/login">
               <button className="hidden cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-orange-50 hover:text-orange-600 md:flex">
                 <User size={18} strokeWidth={2.5} />
                 <span>เข้าสู่ระบบ</span>
@@ -48,8 +48,8 @@ export default function Navbar() {
             </Link>
 
             {/* Register: Modern Gradient/Shadow Button */}
-            <Link href="/register">
-              <button className="group cursor-pointer relative overflow-hidden rounded-full bg-orange-600 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-orange-500/30 transition-all hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-orange-500/40">
+            <Link href="/auth/register">
+              <button className="group relative cursor-pointer overflow-hidden rounded-full bg-orange-600 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-orange-500/30 transition-all hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-orange-500/40">
                 <span className="relative z-10">สมัครสมาชิก</span>
               </button>
             </Link>
