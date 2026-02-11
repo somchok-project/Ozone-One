@@ -5,8 +5,8 @@ import { Noto_Sans_Thai } from "next/font/google";
 import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
-  title: "SpotRent",
-  description: "ระบบจัดการเช่าบูธอัจฉริยะ",
+  title: "Ozone One",
+  description: "ตลาดโอโซนวัน",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
