@@ -15,22 +15,20 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-
-
 enum Role {
     USER
     ADMIN
 }
 
 model User {
-    id                String     @id @default(uuid()) @db.Uuid
-    phone_number      String
-    password          String
-    email             String
-    role              Role
-    bookings          Booking[]
-    booths            Booth[]
-    reviews           Review[]
+    id           String    @id @default(uuid()) @db.Uuid
+    phone_number String
+    password     String
+    email        String
+    role         Role
+    bookings     Booking[]
+    booths       Booth[]
+    reviews      Review[]
 }
 
 enum BoothType {
@@ -39,26 +37,26 @@ enum BoothType {
 }
 
 model Booth {
-    id                String     @id @default(uuid()) @db.Uuid
-    name              String
-    price             Float
-    is_available      Boolean    @default(false)
-    type              BoothType
-    latitude          Decimal    @db.Decimal(10, 8)
-    longitude         Decimal    @db.Decimal(11, 8)
-    images            Image[]
-    bookings          Booking[]
+    id           String    @id @default(uuid()) @db.Uuid
+    name         String
+    price        Float
+    is_available Boolean   @default(false)
+    type         BoothType
+    latitude     Decimal   @db.Decimal(10, 8)
+    longitude    Decimal   @db.Decimal(11, 8)
+    images       Image[]
+    bookings     Booking[]
     // Relation with User model
-    user_id           String     @db.Uuid
-    user              User       @relation(fields: [user_id], references: [id])
+    user_id      String    @db.Uuid
+    user         User      @relation(fields: [user_id], references: [id])
 }
 
 model Image {
-    id                String     @id @default(uuid()) @db.Uuid
-    path              String
+    id       String @id @default(uuid()) @db.Uuid
+    path     String
     // Relation with Booth model
-    booth_id          String     @db.Uuid
-    booth             Booth      @relation(fields: [booth_id], references: [id])
+    booth_id String @db.Uuid
+    booth    Booth  @relation(fields: [booth_id], references: [id])
 }
 
 enum PaymentStatus {
@@ -68,27 +66,27 @@ enum PaymentStatus {
 }
 
 model Booking {
-    id                String     @id @default(uuid()) @db.Uuid
-    start_date        DateTime
-    end_date          DateTime
-    total_price       Float
-    payment_status    PaymentStatus
-    payment_slip_url  String
+    id               String        @id @default(uuid()) @db.Uuid
+    start_date       DateTime
+    end_date         DateTime
+    total_price      Float
+    payment_status   PaymentStatus
+    payment_slip_url String
     // Relation with User model
-    user_id           String     @db.Uuid
-    user              User       @relation(fields: [user_id], references: [id])
+    user_id          String        @db.Uuid
+    user             User          @relation(fields: [user_id], references: [id])
     // Relation with Booth model
-    booth_id          String     @db.Uuid
-    booth             Booth      @relation(fields: [booth_id], references: [id])
+    booth_id         String        @db.Uuid
+    booth            Booth         @relation(fields: [booth_id], references: [id])
 }
 
 model Review {
-    id                String     @id @default(uuid()) @db.Uuid
-    // Example rting: 4.5, 5.0, 2.5, ...
-    rating            Decimal    @db.Decimal(1, 1)
-    comment           String?
-    created_at        DateTime   @default(now())
+    id         String   @id @default(uuid()) @db.Uuid
+    // Example rating: 4.5, 5.0, 2.5, ...
+    rating     Decimal  @db.Decimal(2, 1)
+    comment    String?
+    created_at DateTime @default(now())
     // Relation with User model
-    user_id           String     @db.Uuid
-    user              User       @relation(fields: [user_id], references: [id])
+    user_id    String   @db.Uuid
+    user       User     @relation(fields: [user_id], references: [id])
 }
