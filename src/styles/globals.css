@@ -2,4 +2,67 @@
 
 @theme {
   --font-sans: var(--font-noto-sans-thai);
+  /* Ensure you have orange defined or use default tailwind colors */
+}
+
+/* 1. GLOBAL SCROLLBAR (Apply to the whole page) 
+   Place this in @layer base 
+*/
+@layer base {
+  html {
+    /* Firefox Support */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-orange-400) transparent;
+  }
+
+  /* Webkit Support (Chrome, Edge, Safari) */
+  body::-webkit-scrollbar {
+    width: 6px;  /* Width for vertical scrollbar */
+    height: 6px; /* Height for horizontal scrollbar */
+  }
+
+  body::-webkit-scrollbar-track {
+    background: transparent; /* "System tone white" - blends with background */
+  }
+
+  body::-webkit-scrollbar-thumb {
+    background-color: var(--color-orange-300); /* Soft orange default */
+    border-radius: 9999px; /* Pill shape */
+    border: 2px solid transparent; /* Creates padding effect if you increase width */
+    background-clip: content-box;
+    transition: background-color 0.2s ease;
+  }
+
+  body::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-orange-500); /* Vivid orange on hover */
+  }
+}
+
+/* 2. UTILITY CLASS (Optional)
+   If you want to apply this only to specific divs (like a chat box or sidebar),
+   use this class instead of the global styling above.
+*/
+@layer utilities {
+  .scrollbar-orange {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-orange-400) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: var(--color-orange-300);
+      border-radius: 99px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: var(--color-orange-500);
+    }
+  }
 }
