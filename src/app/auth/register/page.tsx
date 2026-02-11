@@ -11,15 +11,23 @@ import {
   SubmitButton,
   AuthFooter,
 } from "@/components/auth";
+import { useActionState } from "react";
+import { register } from "../actions";
+
+const initialState = {
+  error: "",
+};
 
 export default function RegisterPage() {
+  const [state, formAction] = useActionState(register, initialState);
+
   return (
     <AuthPageWrapper
       icon={<Mail className="h-6 w-6" />}
       title="สร้างบัญชีใหม่"
       subtitle="เริ่มต้นค้นหาพื้นที่ขายที่เหมาะกับคุณ"
     >
-      <form className="mt-8 space-y-6">
+      <form action={formAction} className="mt-8 space-y-6">
         <div className="space-y-5">
           <Input
             id="phone"
@@ -91,6 +99,8 @@ export default function RegisterPage() {
             </Link>
           </label>
         </div>
+
+        {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
 
         <SubmitButton>สมัครสมาชิก</SubmitButton>
       </form>

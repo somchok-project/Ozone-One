@@ -11,15 +11,32 @@ import {
   SubmitButton,
   AuthFooter,
 } from "@/components/auth";
+import { useActionState } from "react";
+import { login } from "../actions";
+import { useSearchParams } from "next/navigation";
+
+const initialState = {
+  error: "",
+};
 
 export default function LoginPage() {
+  const [state, formAction] = useActionState(login, initialState);
+  const searchParams = useSearchParams();
+  const registered = searchParams.get("registered");
+
   return (
     <AuthPageWrapper
       icon={<Lock className="h-6 w-6" />}
       title="ยินดีต้อนรับ"
       subtitle="กรอกข้อมูลด้านล่างเพื่อเข้าสู่บัญชีของคุณ"
     >
-      <form className="mt-8 space-y-6">
+      {registered && (
+        <div className="mb-4 rounded-md bg-green-50 p-4 text-sm text-green-700">
+          สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ
+        </div>
+      )}
+
+      <form action={formAction} className="mt-8 space-y-6">
         <div className="space-y-5">
           <Input
             id="email"
@@ -51,6 +68,8 @@ export default function LoginPage() {
             // }
           />
         </div>
+
+        {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
 
         <SubmitButton>เข้าสู่ระบบ</SubmitButton>
       </form>
