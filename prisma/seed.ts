@@ -17,6 +17,8 @@ async function main() {
   await prisma.booking.deleteMany();
   await prisma.image.deleteMany();
   await prisma.booth.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.account.deleteMany();
   await prisma.user.deleteMany();
 
   // ─── Users ───
@@ -24,9 +26,11 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
+      name: "Rawipon Ponsarutwanit",
       phone_number: "0812345678",
       password: hashedPassword,
       email: "rawiponponsarutwanit@gmail.com",
+      emailVerified: new Date(),
       role: Role.ADMIN,
     },
   });
@@ -36,6 +40,7 @@ async function main() {
       phone_number: "0898765432",
       password: hashedPassword,
       email: "rawipon.po@ku.th",
+      emailVerified: new Date(),
       role: Role.USER,
     },
   });

@@ -53,9 +53,10 @@ export default function LoginPage() {
         </div>
 
         <SubmitButton>เข้าสู่ระบบ</SubmitButton>
-        <Divider text="หรือดำเนินการต่อด้วย" />
-        <GoogleButton />
       </form>
+
+      <Divider text="หรือดำเนินการต่อด้วย" />
+      <GoogleButton />
 
       <AuthFooter
         text="ยังไม่มีบัญชีใช่ไหม?"

@@ -93,9 +93,10 @@ export default function RegisterPage() {
         </div>
 
         <SubmitButton>สมัครสมาชิก</SubmitButton>
-        <Divider />
-        <GoogleButton label="สมัครด้วย Google" />
       </form>
+
+      <Divider />
+      <GoogleButton label="สมัครด้วย Google" />
 
       <AuthFooter
         text="มีบัญชีอยู่แล้ว?"
