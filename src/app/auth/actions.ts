@@ -1,6 +1,5 @@
 "use server";
-
-import { signIn } from "@/server/auth";
+import { signIn, signOut } from "@/server/auth";
 import { auth } from "@/server/auth";
 import { redirect } from "next/navigation";
 
@@ -16,10 +15,14 @@ export async function redirectByRole() {
   }
 
   const role = session.user.role;
+  console.log("Redirecting for user:", session.user.email, "Role:", role);
 
   if (role == "ADMIN") {
     redirect("/admin");
   } else {
     redirect("/customer");
   }
+}
+export async function logout() {
+  await signOut({ redirectTo: "/auth/login" });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, Lock, Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import { Input } from "@/components/ui";
 import {
   AuthPageWrapper,
