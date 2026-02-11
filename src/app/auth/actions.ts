@@ -49,7 +49,7 @@ export async function register(prevState: any, formData: FormData) {
     return { error: "ข้อมูลไม่ถูกต้อง" };
   }
 
-  const { email, password, phone } = validatedFields.data;
+  const { name, email, password, phone } = validatedFields.data;
 
   try {
     const existingUser = await db.user.findUnique({
@@ -64,6 +64,7 @@ export async function register(prevState: any, formData: FormData) {
 
     await db.user.create({
       data: {
+        name,
         email,
         password: hashedPassword,
         phone_number: phone,

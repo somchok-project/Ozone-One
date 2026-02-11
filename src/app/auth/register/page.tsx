@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone, User } from "lucide-react";
 import { Input } from "@/components/ui";
 import {
   AuthPageWrapper,
@@ -29,6 +29,18 @@ export default function RegisterPage() {
     >
       <form action={formAction} className="mt-8 space-y-6">
         <div className="space-y-5">
+          <Input
+            id="name"
+            name="name"
+            type="text"
+            required
+            label="ชื่อ-นามสกุล"
+            placeholder="สมชาย ใจดี"
+            prefix={
+              <User className="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-orange-500" />
+            }
+          />
+
           <Input
             id="phone"
             name="phone"

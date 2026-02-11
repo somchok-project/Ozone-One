@@ -7,6 +7,7 @@ export const loginSchema = z.object({
 
 export const registerSchema = z
   .object({
+    name: z.string().min(1, "กรุณากรอกชื่อ-นามสกุล"),
     email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
     phone: z.string().min(10, "เบอร์โทรศัพท์ต้องมีอย่างน้อย 10 หลัก"),
     password: z.string().min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"),
