@@ -41,14 +41,14 @@ export default function LoginPage() {
             required
             label="รหัสผ่าน"
             placeholder="••••••••"
-            labelRight={
-              <Link
-                href="/auth/forgot-password"
-                className="font-sans text-xs font-medium text-orange-500 hover:text-orange-600 hover:underline"
-              >
-                ลืมรหัสผ่าน?
-              </Link>
-            }
+            // labelRight={
+            //   <Link
+            //     href="/auth/forgot-password"
+            //     className="font-sans text-xs font-medium text-orange-500 hover:text-orange-600 hover:underline"
+            //   >
+            //     ลืมรหัสผ่าน?
+            //   </Link>
+            // }
           />
         </div>
 
