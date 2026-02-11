@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, Lock, Phone } from "lucide-react";
+import { Mail, Phone, User } from "lucide-react";
 import { Input } from "@/components/ui";
 import {
   AuthPageWrapper,
@@ -11,16 +11,36 @@ import {
   SubmitButton,
   AuthFooter,
 } from "@/components/auth";
+import { useActionState } from "react";
+import { register } from "../actions";
+
+const initialState = {
+  error: "",
+};
 
 export default function RegisterPage() {
+  const [state, formAction] = useActionState(register, initialState);
+
   return (
     <AuthPageWrapper
       icon={<Mail className="h-6 w-6" />}
       title="สร้างบัญชีใหม่"
       subtitle="เริ่มต้นค้นหาพื้นที่ขายที่เหมาะกับคุณ"
     >
-      <form className="mt-8 space-y-6">
+      <form action={formAction} className="mt-8 space-y-6">
         <div className="space-y-5">
+          <Input
+            id="name"
+            name="name"
+            type="text"
+            required
+            label="ชื่อ-นามสกุล"
+            placeholder="สมชาย ใจดี"
+            prefix={
+              <User className="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-orange-500" />
+            }
+          />
+
           <Input
             id="phone"
             name="phone"
@@ -92,10 +112,13 @@ export default function RegisterPage() {
           </label>
         </div>
 
+        {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
+
         <SubmitButton>สมัครสมาชิก</SubmitButton>
-        <Divider />
-        <GoogleButton label="สมัครด้วย Google" />
       </form>
+
+      <Divider />
+      <GoogleButton label="สมัครด้วย Google" />
 
       <AuthFooter
         text="มีบัญชีอยู่แล้ว?"

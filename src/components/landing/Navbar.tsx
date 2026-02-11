@@ -1,8 +1,23 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { User, Menu } from "lucide-react"; // เพิ่ม Menu icon สำหรับ mobile
 
 export default function Navbar() {
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    // Only handle hash links
+    const href = e.currentTarget.href;
+    const targetId = href.replace(/.*\#/, "");
+    const elem = document.getElementById(targetId);
+    if (elem) {
+      e.preventDefault();
+      elem.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
     <nav className="fixed top-0 z-50 w-full border-b border-orange-100/50 bg-white/90 backdrop-blur-xl transition-all">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -28,6 +43,7 @@ export default function Navbar() {
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={item.href.startsWith("#") ? handleScroll : undefined}
                 className="group relative text-sm font-medium text-slate-600 transition-colors hover:text-orange-600"
               >
                 {item.name}

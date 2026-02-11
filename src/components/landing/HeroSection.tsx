@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 export default function HeroSection() {
   return (
@@ -69,7 +72,12 @@ export default function HeroSection() {
           {/* --- LEFT: Text Content --- */}
           <div className="flex flex-col justify-center text-center lg:col-span-5 lg:text-left">
             {/* Tag */}
-            <div className="mb-6 flex justify-center lg:justify-start">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="mb-6 flex justify-center lg:justify-start"
+            >
               <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/60 px-4 py-1.5 shadow-sm backdrop-blur-md">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span>
@@ -79,10 +87,15 @@ export default function HeroSection() {
                   Ozone One Market
                 </span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Headline */}
-            <h1 className="mb-6 text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl xl:text-7xl">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mb-6 text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl xl:text-7xl"
+            >
               <span className="block font-light text-gray-600">The New</span>
               <span className="block">Standard of</span>
               <span className="relative whitespace-nowrap text-orange-600">
@@ -97,16 +110,26 @@ export default function HeroSection() {
                 </svg>
                 <span className="relative drop-shadow-sm">Trading</span>
               </span>
-            </h1>
+            </motion.h1>
 
-            <p className="mb-8 text-lg leading-relaxed font-light text-gray-600 md:text-xl lg:max-w-md">
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="mb-8 text-lg leading-relaxed font-light text-gray-600 md:text-xl lg:max-w-md"
+            >
               ยกระดับประสบการณ์การค้าขายสู่มาตรฐานใหม่
               ในทำเลที่ถูกออกแบบอย่างพิถีพิถันเพื่อ &ldquo;ความสำเร็จ&rdquo;
               ของคุณ
-            </p>
+            </motion.p>
 
             {/* Buttons */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              className="flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start"
+            >
               <Link
                 href="#booths"
                 className="group relative flex h-14 items-center justify-center overflow-hidden rounded-full bg-gray-900 px-8 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-1 hover:bg-orange-600 hover:shadow-orange-500/30"
@@ -133,13 +156,18 @@ export default function HeroSection() {
                   />
                 </svg>
               </Link>
-            </div>
+            </motion.div>
           </div>
 
           {/* --- RIGHT: Floating Gallery --- */}
           <div className="relative mt-12 h-[500px] w-full lg:col-span-7 lg:mt-0 lg:h-[650px]">
             {/* Main Center Image */}
-            <div className="absolute top-1/2 left-1/2 z-20 h-[380px] w-[280px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[2rem] bg-white p-2 shadow-2xl shadow-gray-200/50 transition-transform duration-500 hover:scale-[1.02] md:h-[480px] md:w-[340px]">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8 }}
+              className="absolute top-1/2 left-1/2 z-20 h-[380px] w-[280px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[2rem] bg-white p-2 shadow-2xl shadow-gray-200/50 transition-transform duration-500 hover:scale-[1.02] md:h-[480px] md:w-[340px]"
+            >
               <div className="relative h-full w-full overflow-hidden rounded-[1.5rem]">
                 <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                 <Image
@@ -156,10 +184,15 @@ export default function HeroSection() {
                   <p className="text-xl font-bold">โซนแฮงค์เอาท์</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Left Image */}
-            <div className="absolute top-10 left-4 z-10 h-[220px] w-[160px] -rotate-6 overflow-hidden rounded-3xl bg-white/80 p-2 shadow-xl shadow-gray-200/50 backdrop-blur-md transition-all duration-500 hover:z-30 hover:scale-105 hover:rotate-0 md:top-20 md:left-12 md:h-[260px] md:w-[200px]">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="absolute top-10 left-4 z-10 h-[220px] w-[160px] -rotate-6 overflow-hidden rounded-3xl bg-white/80 p-2 shadow-xl shadow-gray-200/50 backdrop-blur-md transition-all duration-500 hover:z-30 hover:scale-105 hover:rotate-0 md:top-20 md:left-12 md:h-[260px] md:w-[200px]"
+            >
               <div className="h-full w-full overflow-hidden rounded-2xl">
                 <Image
                   src="/images/bg-ตลาดโอโซนวัน2.png"
@@ -169,10 +202,15 @@ export default function HeroSection() {
                   height={200}
                 />
               </div>
-            </div>
+            </motion.div>
 
             {/* Right Top Image */}
-            <div className="absolute top-8 right-4 z-10 h-[180px] w-[180px] rotate-3 overflow-hidden rounded-3xl bg-white/80 p-2 shadow-xl shadow-gray-200/50 backdrop-blur-md transition-all duration-500 hover:z-30 hover:scale-105 hover:rotate-0 md:top-16 md:right-16 md:h-[220px] md:w-[220px]">
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="absolute top-8 right-4 z-10 h-[180px] w-[180px] rotate-3 overflow-hidden rounded-3xl bg-white/80 p-2 shadow-xl shadow-gray-200/50 backdrop-blur-md transition-all duration-500 hover:z-30 hover:scale-105 hover:rotate-0 md:top-16 md:right-16 md:h-[220px] md:w-[220px]"
+            >
               <div className="absolute -top-0 -right-0 flex h-10 w-10 rotate-45 items-center justify-center rounded-full bg-orange-500 text-white shadow-md">
                 <svg
                   className="h-5 w-5"
@@ -198,10 +236,15 @@ export default function HeroSection() {
                   height={200}
                 />
               </div>
-            </div>
+            </motion.div>
 
             {/* Bottom Right Image */}
-            <div className="absolute right-2 bottom-12 z-30 h-[140px] w-[200px] -rotate-3 overflow-hidden rounded-3xl bg-white/80 p-2 shadow-xl shadow-orange-100/50 backdrop-blur-md transition-all duration-500 hover:z-40 hover:scale-105 hover:rotate-0 md:right-8 md:bottom-20 md:h-[180px] md:w-[260px]">
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="absolute right-2 bottom-12 z-30 h-[140px] w-[200px] -rotate-3 overflow-hidden rounded-3xl bg-white/80 p-2 shadow-xl shadow-orange-100/50 backdrop-blur-md transition-all duration-500 hover:z-40 hover:scale-105 hover:rotate-0 md:right-8 md:bottom-20 md:h-[180px] md:w-[260px]"
+            >
               <div className="h-full w-full overflow-hidden rounded-2xl">
                 <Image
                   src="/images/bg-ตลาดโอโซนวัน4.png"
@@ -211,7 +254,7 @@ export default function HeroSection() {
                   height={200}
                 />
               </div>
-            </div>
+            </motion.div>
 
             <div className="absolute bottom-10 left-10 -z-10 grid grid-cols-4 gap-2 opacity-20">
               {Array.from({ length: 16 }).map((_, i) => (
