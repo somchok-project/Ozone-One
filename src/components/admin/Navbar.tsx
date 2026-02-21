@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { LogOut, LayoutDashboard, Users, Settings, Menu } from "lucide-react";
+import { LogOut, LayoutDashboard, Users, Menu, Warehouse } from "lucide-react";
 import { logout } from "@/app/auth/actions";
 import { useState } from "react";
 
@@ -25,8 +25,8 @@ export default function AdminNavbar() {
           <div className="hidden items-center space-x-8 md:flex">
             {[
               { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-              { name: "Users", href: "#", icon: Users },
-              { name: "Settings", href: "#", icon: Settings },
+              { name: "Users", href: "/admin/users", icon: Users },
+              { name: "Booths", href: "/admin/booths", icon: Warehouse },
             ].map((item) => (
               <Link
                 key={item.name}
