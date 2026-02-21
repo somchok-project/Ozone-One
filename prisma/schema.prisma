@@ -72,19 +72,20 @@ model VerificationToken {
     @@unique([identifier, token])
 }
 
-enum BoothType {
-    FREE
-    BOOKING
-}
+// enum BoothType {
+//     FREE
+//     BOOKING
+// }
 
 model Booth {
     id           String    @id @default(uuid()) @db.Uuid
     name         String
     price        Float
     is_available Boolean   @default(false)
-    type         BoothType
+    // type         BoothType
     latitude     Decimal   @db.Decimal(10, 8)
     longitude    Decimal   @db.Decimal(11, 8)
+    dimension    String
     images       Image[]
     bookings     Booking[]
     // Relation with User model
