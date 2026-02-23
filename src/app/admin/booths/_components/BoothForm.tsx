@@ -44,11 +44,6 @@ export function BoothForm({
     const [isPending, startTransition] = useTransition();
     const isEditing = !!initialData;
 
-    const boothTypeOptions = [
-        { value: "FREE", label: "ฟรี" },
-        { value: "BOOKING", label: "จองล่วงหน้า" },
-    ];
-
     const statusOptions = [
         { value: "true", label: "เปิดใช้งาน / ว่าง" },
         { value: "false", label: "ปิดใช้งาน / ไม่ว่าง" },
@@ -110,13 +105,6 @@ export function BoothForm({
                                 />
                             </div>
                             <div className="grid gap-6 md:grid-cols-2">
-                                <Select
-                                    label="ประเภทบูธ"
-                                    name="type"
-                                    options={boothTypeOptions}
-                                    defaultValue={initialData?.type || "FREE"}
-                                    required
-                                />
                                 <Input
                                     label="ราคา"
                                     name="price"
