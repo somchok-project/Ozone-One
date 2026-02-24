@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Star } from "lucide-react";
+import { MessageSquare } from "lucide-react";
+import ReviewCard from "@/components/admin/reviews/ReviewCard";
 
 interface ReviewsSectionProps {
   recentReviews: any[];
@@ -10,35 +11,35 @@ interface ReviewsSectionProps {
 
 export default function ReviewsSection({ recentReviews }: ReviewsSectionProps) {
   return (
-    <Card className="border-slate-200/60 shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base font-semibold">รีวิวล่าสุด</CardTitle>
-        <Link href="/admin/reviews" className="text-xs font-medium text-orange-600 hover:underline">
+    <Card className="border-none bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+            <MessageSquare className="h-4 w-4" />
+          </div>
+          <CardTitle className="text-lg font-bold text-slate-800">รีวิวล่าสุด</CardTitle>
+        </div>
+        <Link 
+          href="/admin/reviews" 
+          className="text-xs font-semibold text-slate-400 transition-colors hover:text-orange-600"
+        >
           ดูทั้งหมด
         </Link>
       </CardHeader>
+      
       <CardContent>
-        <div className="space-y-4">
+        <div className="divide-y divide-slate-50">
           {recentReviews.map((review) => (
-            <div key={review.id} className="flex items-start justify-between rounded-xl border border-slate-100 p-4 transition-colors hover:bg-slate-50">
-              <div className="flex-1">
-                <div className="mb-1 flex items-center gap-2">
-                   <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
-                    {review.type}
-                  </span>
-                  <span className="text-xs font-medium text-orange-600">{review.booth.name}</span>
-                </div>
-                <p className="text-sm text-slate-700 line-clamp-2 italic">"{review.comment ?? "ไม่มีข้อความ"}"</p>
-                <p className="mt-2 text-[11px] text-slate-400">โดย {review.user.name ?? review.user.email}</p>
-              </div>
-              <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-bold text-amber-600">
-                <Star className="h-3 w-3 fill-amber-600" />
-                {Number(review.rating).toFixed(1)}
-              </div>
-            </div>
+            <ReviewCard key={review.id} review={review} />
           ))}
+
           {recentReviews.length === 0 && (
-            <div className="py-10 text-center text-sm text-slate-400">ยังไม่มีข้อมูลรีวิว</div>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="mb-3 rounded-full bg-slate-50 p-3">
+                <MessageSquare className="h-6 w-6 text-slate-200" />
+              </div>
+              <p className="text-sm font-medium text-slate-400">ยังไม่มีข้อมูลรีวิวในขณะนี้</p>
+            </div>
           )}
         </div>
       </CardContent>
