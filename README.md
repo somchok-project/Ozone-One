@@ -10,7 +10,12 @@ This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3
 npm install
 ```
 
-### 2. ตั้งค่าและใช้งาน Prisma
+### 2. ติดตั้ง docker
+```
+docker-compose up -d
+```
+
+### 3. ตั้งค่าและใช้งาน Prisma
 
 - แก้ไขการเชื่อมต่อฐานข้อมูลในไฟล์ `prisma/schema.prisma`
 - รัน migration เพื่อสร้างตารางในฐานข้อมูล
