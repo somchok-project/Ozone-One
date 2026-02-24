@@ -1,7 +1,9 @@
 "use client";
 
-import { CalendarDays, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { formatCurrency, formatThaiDate } from "@/lib/utils/format";
+import { getColorStatus } from "@/lib/utils/color";
+import { getLabelStatus } from "@/lib/utils/label";
 
 interface BookingCardProps {
   booking: {
@@ -19,6 +21,8 @@ interface BookingCardProps {
   };
 }
 
+
+
 export default function BookingCard({ booking }: BookingCardProps) {
   return (
     <div className="group flex items-center justify-between py-5 transition-all first:pt-2 last:pb-2">
@@ -26,11 +30,7 @@ export default function BookingCard({ booking }: BookingCardProps) {
         {/* Status Dot */}
         <div
           className={`h-2 w-2 rounded-full ${
-            booking.payment_status === "SUCCESS"
-              ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
-              : booking.payment_status === "PENDING"
-                ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]"
-                : "bg-rose-500"
+            getColorStatus(booking.payment_status).dot
           }`}
         />
 
@@ -52,18 +52,10 @@ export default function BookingCard({ booking }: BookingCardProps) {
         </p>
         <p
           className={`text-[10px] font-bold uppercase tracking-widest ${
-            booking.payment_status === "SUCCESS"
-              ? "text-emerald-500"
-              : booking.payment_status === "PENDING"
-                ? "text-amber-500"
-                : "text-rose-500"
+            getColorStatus(booking.payment_status).text
           }`}
         >
-          {booking.payment_status === "SUCCESS"
-            ? "ยืนยันแล้ว"
-            : booking.payment_status === "PENDING"
-              ? "รอยืนยัน"
-              : "ยกเลิก"}
+          {getLabelStatus(booking.payment_status)}
         </p>
       </div>
     </div>
