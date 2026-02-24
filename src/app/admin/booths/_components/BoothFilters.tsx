@@ -1,37 +1,47 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { SearchInput } from "@/components/admin/SearchInput";
+import { FilterSelect } from "@/components/ui/filter-select";
+import type { FilterSelectOption } from "@/components/ui/filter-select";
+import { Filter } from "lucide-react";
 
 interface BoothFiltersProps {
     query: string;
     statusFilter: string;
 }
 
+const statusOptions: FilterSelectOption[] = [
+    { label: "ทั้งหมด", value: "all" },
+    { label: "ว่าง", value: "available" },
+    { label: "ถูกจอง", value: "occupied" }
+];
+
 export function BoothFilters({ query, statusFilter }: BoothFiltersProps) {
+    const router = useRouter();
+
+    const handleStatusChange = (value: string) => {
+        const params = new URLSearchParams();
+        if (query) params.set("q", query);
+        params.set("status", value);
+        router.push(`/admin/booths?${params.toString()}`);
+    };
+
     return (
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="flex-1">
+            <div className="flex-1 w-full md:w-[400px]">
                 <SearchInput placeholder="ค้นหาชื่อบูธ หรือขนาด..." />
             </div>
             
-            <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
-                {[
-                    { label: "ทั้งหมด", value: "all" },
-                    { label: "ว่าง", value: "available" },
-                    { label: "ไม่ว่าง/ถูกจอง", value: "occupied" }
-                ].map((opt) => (
-                    <Link 
-                        key={opt.value}
-                        href={`/admin/booths?${new URLSearchParams({ ...(query ? { q: query } : {}), status: opt.value }).toString()}`}
-                    >
-                        <button className={`px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                            statusFilter === opt.value 
-                            ? 'bg-slate-900 text-white shadow-md shadow-slate-200' 
-                            : 'text-slate-500 hover:text-orange-500'
-                        }`}>
-                            {opt.label}
-                        </button>
-                    </Link>
-                ))}
+            <div className="shrink-0">
+                <FilterSelect
+                    value={statusFilter}
+                    onChange={handleStatusChange}
+                    options={statusOptions}
+                    placeholder="ตัวกรองสถานะ"
+                    dropdownTitle="เลือกสถานะ"
+                    icon={<Filter className="h-4 w-4" />}
+                />
             </div>
         </div>
     );
