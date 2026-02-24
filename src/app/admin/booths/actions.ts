@@ -3,7 +3,30 @@
 import { db } from "@/server/db";
 import { revalidatePath } from "next/cache";
 
+export async function getBooths(params?: { q?: string; status?: string }) {
+    const query = params?.q || "";
+    const statusFilter = params?.status || "all";
 
+    const booths = await db.booth.findMany({
+        where: {
+            OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { dimension: { contains: query, mode: "insensitive" } },
+            ],
+            ...(statusFilter !== "all"
+                ? { is_available: statusFilter === "available" }
+                : {}),
+        },
+        include: {
+            user: true,
+        },
+        orderBy: {
+            name: 'asc'
+        }
+    });
+
+    return booths;
+}
 export async function createBoothAction(formData: FormData) {
     try {
         const name = formData.get("name") as string;

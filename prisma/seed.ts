@@ -89,7 +89,7 @@ async function main() {
           name: `${zone}${i.toString().padStart(2, "0")} - Zone ${zone}`,
           price: 300 + Math.floor(Math.random() * 500),
           dimension: i % 2 === 0 ? "3x3 m" : "2x2 m",
-          is_available: true,
+          is_available: Math.random() > 0.3, // 70% available, 30% occupied
           latitude: 13.756 + Math.random() * 0.01,
           longitude: 100.501 + Math.random() * 0.01,
           user_id: admin.id,
