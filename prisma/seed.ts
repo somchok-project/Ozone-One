@@ -1,9 +1,12 @@
+// prisma/seed.ts
+
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 import {
   PrismaClient,
   Role,
-  // BoothType,
   PaymentStatus,
+  BookingStatus,
+  ReviewType,
 } from "../generated/prisma";
 import { hash } from "bcryptjs";
 
@@ -12,7 +15,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // ─── Clean existing data ───
+  // 1. Clean Data (ลบข้อมูลเก่าทิ้งก่อน)
   await prisma.review.deleteMany();
   await prisma.booking.deleteMany();
   await prisma.image.deleteMany();
@@ -21,191 +24,111 @@ async function main() {
   await prisma.account.deleteMany();
   await prisma.user.deleteMany();
 
-  // ─── Users ───
   const hashedPassword = await hash("password123", 12);
 
+  // 2. Create Users
   const admin = await prisma.user.create({
     data: {
-      name: "Rawipon Ponsarutwanit",
-      phone_number: "0812345678",
+      name: "Admin Market",
+      email: "admin@market.com",
       password: hashedPassword,
-      email: "rawiponponsarutwanit@gmail.com",
-      emailVerified: new Date(),
       role: Role.ADMIN,
+      phone_number: "0811111111",
     },
   });
 
-  const user = await prisma.user.create({
+  const customer = await prisma.user.create({
     data: {
-      phone_number: "0898765432",
+      name: "John Customer",
+      email: "customer@example.com",
       password: hashedPassword,
-      email: "rawipon.po@ku.th",
-      emailVerified: new Date(),
-      role: Role.USER,
+      role: Role.CUSTOMER,
+      phone_number: "0822222222",
     },
   });
 
-  console.log(`  ✅ Created ${2} users`);
+  console.log("✅ Users created");
 
-  // ─── Booths ───
-  const booths = await Promise.all([
-    prisma.booth.create({
-      data: {
-        name: "โซน A - ล็อค 1",
-        price: 500,
-        is_available: true,
-        //type: BoothType.BOOKING,
-        latitude: 13.84567891,
-        longitude: 100.57234567,
-        dimension: "3x3 m",
-        user_id: admin.id,
-      },
-    }),
-    prisma.booth.create({
-      data: {
-        name: "โซน A - ล็อค 2",
-        price: 500,
-        is_available: true,
-        //type: BoothType.BOOKING,
-        latitude: 13.84567892,
-        longitude: 100.57234568,
-        dimension: "3x3 m",
-        user_id: admin.id,
-      },
-    }),
-    prisma.booth.create({
-      data: {
-        name: "โซน B - ล็อค 1",
-        price: 300,
-        is_available: true,
-        // type: BoothType.FREE,
-        latitude: 13.84577891,
-        longitude: 100.57244567,
-        dimension: "2x2 m",
-        user_id: admin.id,
-      },
-    }),
-    prisma.booth.create({
-      data: {
-        name: "โซน B - ล็อค 2",
-        price: 300,
-        is_available: false,
-        // type: BoothType.FREE,
-        latitude: 13.84577892,
-        longitude: 100.57244568,
-        dimension: "2x2 m",
-        user_id: admin.id,
-      },
-    }),
-    prisma.booth.create({
-      data: {
-        name: "โซน C - พรีเมียม",
-        price: 1200,
-        is_available: true,
-        //type: BoothType.BOOKING,
-        latitude: 13.84587891,
-        longitude: 100.57254567,
-        dimension: "4x4 m",
-        user_id: admin.id,
-      },
-    }),
-  ]);
+  // 3. Create Booths (ผูกกับ Admin คนสร้าง)
+  const booth1 = await prisma.booth.create({
+    data: {
+      name: "A01 - โซนแฟชั่น",
+      price: 450,
+      dimension: "3x3 m",
+      is_available: true,
+      latitude: 13.7563,
+      longitude: 100.5018,
+      user_id: admin.id,
+    },
+  });
 
-  console.log(`  ✅ Created ${booths.length} booths`);
+  const booth2 = await prisma.booth.create({
+    data: {
+      name: "B05 - โซนอาหาร",
+      price: 600,
+      dimension: "2x2 m",
+      is_available: true,
+      latitude: 13.7565,
+      longitude: 100.5020,
+      user_id: admin.id,
+    },
+  });
 
-  // ─── Images ───
-  const images = await Promise.all(
-    booths.flatMap((booth, i) => [
-      prisma.image.create({
-        data: {
-          path: `/images/booths/booth-${i + 1}-1.jpg`,
-          booth_id: booth.id,
-        },
-      }),
-      prisma.image.create({
-        data: {
-          path: `/images/booths/booth-${i + 1}-2.jpg`,
-          booth_id: booth.id,
-        },
-      }),
-    ]),
-  );
+  console.log("✅ Booths created");
 
-  console.log(`  ✅ Created ${images.length} images`);
+  // 4. Create Images
+  await prisma.image.createMany({
+    data: [
+      { path: "/images/booth-a01.jpg", booth_id: booth1.id },
+      { path: "/images/booth-b05.jpg", booth_id: booth2.id },
+    ],
+  });
 
-  // ─── Bookings ───
-  const now = new Date();
-  const bookings = await Promise.all([
-    prisma.booking.create({
-      data: {
-        start_date: new Date(now.getFullYear(), now.getMonth(), 15),
-        end_date: new Date(now.getFullYear(), now.getMonth(), 20),
-        total_price: 2500,
-        payment_status: PaymentStatus.SUCCESS,
-        payment_slip_url: "/slips/slip-001.jpg",
-        user_id: user.id,
-        booth_id: booths[0].id,
-      },
-    }),
-    prisma.booking.create({
-      data: {
-        start_date: new Date(now.getFullYear(), now.getMonth() + 1, 1),
-        end_date: new Date(now.getFullYear(), now.getMonth() + 1, 5),
-        total_price: 1500,
-        payment_status: PaymentStatus.PENDING,
-        payment_slip_url: "/slips/slip-002.jpg",
-        user_id: user.id,
-        booth_id: booths[2].id,
-      },
-    }),
-    prisma.booking.create({
-      data: {
-        start_date: new Date(now.getFullYear(), now.getMonth() - 1, 10),
-        end_date: new Date(now.getFullYear(), now.getMonth() - 1, 15),
-        total_price: 6000,
-        payment_status: PaymentStatus.CANCEL,
-        payment_slip_url: "/slips/slip-003.jpg",
-        user_id: user.id,
-        booth_id: booths[4].id,
-      },
-    }),
-  ]);
+  // 5. Create Booking (จำลองการจองที่ผ่านมาแล้ว)
+  const booking = await prisma.booking.create({
+    data: {
+      start_date: new Date("2026-02-01"),
+      end_date: new Date("2026-02-05"),
+      total_price: 2250,
+      payment_status: PaymentStatus.SUCCESS,
+      booking_status: BookingStatus.COMPLETED,
+      user_id: customer.id,
+      booth_id: booth1.id,
+    },
+  });
 
-  console.log(`  ✅ Created ${bookings.length} bookings`);
+  console.log("✅ Bookings created");
 
-  // ─── Reviews ───
-  const reviews = await Promise.all([
-    prisma.review.create({
-      data: {
-        rating: 4.5,
-        comment: "พื้นที่ดีมาก ทำเลสะดวก ลูกค้าเยอะ",
-        user_id: user.id,
-      },
-    }),
-    prisma.review.create({
-      data: {
+  // 6. Create Reviews (แยกประเภทตามที่ต้องการ)
+  await prisma.review.createMany({
+    data: [
+      {
         rating: 5.0,
-        comment: "ประทับใจมากครับ บริการเป็นมิตร",
-        user_id: user.id,
+        comment: "บูธตำแหน่งดีมาก คนเดินผ่านเยอะ",
+        type: ReviewType.BOOTH,
+        user_id: customer.id,
+        booth_id: booth1.id,
       },
-    }),
-    prisma.review.create({
-      data: {
-        rating: 3.5,
-        comment: "โดยรวมโอเค แต่ที่จอดรถน้อยไปหน่อย",
-        user_id: admin.id,
+      {
+        rating: 4.0,
+        comment: "ตลาดสะอาด ระบบจัดการดี แต่ที่จอดรถเต็มไว",
+        type: ReviewType.MARKET,
+        user_id: customer.id,
+        booth_id: booth1.id, // อ้างอิงบูธที่เขาเคยจอง
       },
-    }),
-  ]);
+    ],
+  });
 
-  console.log(`  ✅ Created ${reviews.length} reviews`);
-  console.log("\n🎉 Seeding complete!");
+  console.log("✅ Reviews created");
+  console.log("🎉 Seed complete!");
 }
 
 main()
-  .then(() => prisma.$disconnect())
+  .then(async () => {
+    await prisma.$disconnect();
+  })
   .catch(async (e) => {
-    console.error("❌ Seed failed:", e);
+    console.error(e);
     await prisma.$disconnect();
     process.exit(1);
   });

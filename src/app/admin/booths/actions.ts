@@ -3,20 +3,18 @@
 import { db } from "@/server/db";
 import { revalidatePath } from "next/cache";
 
-type BoothType = "FREE" | "BOOKING";
 
 export async function createBoothAction(formData: FormData) {
     try {
         const name = formData.get("name") as string;
-        const type = formData.get("type") as BoothType;
         const price = parseFloat(formData.get("price") as string);
         const is_available = formData.get("is_available") === "true";
         const user_id = formData.get("user_id") as string;
-        const latitude = parseFloat(formData.get("latitude") as string);
-        const longitude = parseFloat(formData.get("longitude") as string);
+        // const latitude = parseFloat(formData.get("latitude") as string);
+        // const longitude = parseFloat(formData.get("longitude") as string);
         const dimension = formData.get("dimension") as string;
 
-        if (!name || isNaN(price) || !user_id || isNaN(latitude) || isNaN(longitude) || !dimension) {
+        if (!name || isNaN(price) || !user_id || !dimension) {
             return { success: false, error: "กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง" };
         }
 
@@ -26,8 +24,8 @@ export async function createBoothAction(formData: FormData) {
                 price,
                 is_available,
                 user_id,
-                latitude,
-                longitude,
+                // latitude,
+                // longitude,
                 dimension,
             },
         });
@@ -43,15 +41,14 @@ export async function createBoothAction(formData: FormData) {
 export async function updateBoothAction(id: string, formData: FormData) {
     try {
         const name = formData.get("name") as string;
-        const type = formData.get("type") as BoothType;
         const price = parseFloat(formData.get("price") as string);
         const is_available = formData.get("is_available") === "true";
         const user_id = formData.get("user_id") as string;
-        const latitude = parseFloat(formData.get("latitude") as string);
-        const longitude = parseFloat(formData.get("longitude") as string);
+        // const latitude = parseFloat(formData.get("latitude") as string);
+        // const longitude = parseFloat(formData.get("longitude") as string);
         const dimension = formData.get("dimension") as string;
 
-        if (!name || isNaN(price) || !user_id || isNaN(latitude) || isNaN(longitude) || !dimension) {
+        if (!name || isNaN(price) || !user_id || !dimension) {
             return { success: false, error: "กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง" };
         }
 
@@ -62,8 +59,8 @@ export async function updateBoothAction(id: string, formData: FormData) {
                 price,
                 is_available,
                 user_id,
-                latitude,
-                longitude,
+                // latitude,
+                // longitude,
                 dimension,
             },
         });

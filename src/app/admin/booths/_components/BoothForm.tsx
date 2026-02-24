@@ -28,8 +28,8 @@ interface BoothInitialData {
     price: number;
     is_available: string;
     user_id: string;
-    latitude: number;
-    longitude: number;
+    // latitude: number;
+    // longitude: number;
     dimension: string;
 }
 
@@ -150,7 +150,7 @@ export function BoothForm({
                 </Card>
 
                 {/* Location Card */}
-                <Card>
+                {/* <Card>
                     <CardHeader>
                         <CardTitle>พิกัดตำแหน่ง (Latitude / Longitude)</CardTitle>
                     </CardHeader>
@@ -176,7 +176,7 @@ export function BoothForm({
                             />
                         </div>
                     </CardContent>
-                </Card>
+                </Card> */}
             </div>
         </form>
     );

@@ -1,5 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
 
 generator client {
     provider = "prisma-client-js"
@@ -8,15 +7,11 @@ generator client {
 
 datasource db {
     provider = "postgresql"
-    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-    // Further reading:
-    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
     url      = env("DATABASE_URL")
 }
 
 enum Role {
-    USER
+    CUSTOMER
     ADMIN
 }
 
@@ -28,12 +23,15 @@ model User {
     email         String    @unique
     emailVerified DateTime?
     image         String?
-    role          Role      @default(USER)
-    accounts      Account[]
-    sessions      Session[]
-    bookings      Booking[]
-    booths        Booth[]
-    reviews       Review[]
+    role          Role      @default(CUSTOMER)
+
+    accounts Account[]
+    sessions Session[]
+    bookings Booking[]
+    reviews  Review[]
+
+    // บูธที่ User คนนี้ (Admin) เป็นคนสร้างหรือดูแล
+    booths Booth[]
 }
 
 model Account {
@@ -72,33 +70,34 @@ model VerificationToken {
     @@unique([identifier, token])
 }
 
-// enum BoothType {
-//     FREE
-//     BOOKING
-// }
-
 model Booth {
-    id           String    @id @default(uuid()) @db.Uuid
+    id           String  @id @default(uuid()) @db.Uuid
     name         String
     price        Float
-    is_available Boolean   @default(false)
-    // type         BoothType
-    latitude     Decimal   @db.Decimal(10, 8)
-    longitude    Decimal   @db.Decimal(11, 8)
+    is_available Boolean @default(true)
     dimension    String
-    images       Image[]
-    bookings     Booking[]
-    // Relation with User model
-    user_id      String    @db.Uuid
-    user         User      @relation(fields: [user_id], references: [id])
+
+    // พิกัดสำหรับแสดงบนแผนที่ตลาด
+    latitude  Decimal? @db.Decimal(10, 8)
+    longitude Decimal? @db.Decimal(11, 8)
+
+    images   Image[]
+    bookings Booking[]
+    reviews  Review[]
+
+    // ผูกกับ User (Admin) คนที่สร้าง
+    user_id String? @db.Uuid
+    user    User?   @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
 }
 
 model Image {
     id       String @id @default(uuid()) @db.Uuid
     path     String
-    // Relation with Booth model
     booth_id String @db.Uuid
-    booth    Booth  @relation(fields: [booth_id], references: [id])
+    booth    Booth  @relation(fields: [booth_id], references: [id], onDelete: Cascade)
 }
 
 enum PaymentStatus {
@@ -107,27 +106,47 @@ enum PaymentStatus {
     CANCEL
 }
 
+enum BookingStatus {
+    PENDING
+    CONFIRMED
+    COMPLETED
+    CANCELLED
+}
+
 model Booking {
     id               String        @id @default(uuid()) @db.Uuid
     start_date       DateTime
     end_date         DateTime
     total_price      Float
-    payment_status   PaymentStatus
-    payment_slip_url String
-    // Relation with User model
-    user_id          String        @db.Uuid
-    user             User          @relation(fields: [user_id], references: [id])
-    // Relation with Booth model
-    booth_id         String        @db.Uuid
-    booth            Booth         @relation(fields: [booth_id], references: [id])
+    payment_status   PaymentStatus @default(PENDING)
+    booking_status   BookingStatus @default(PENDING)
+    payment_slip_url String?
+
+    user_id String @db.Uuid
+    user    User   @relation(fields: [user_id], references: [id])
+
+    booth_id String @db.Uuid
+    booth    Booth  @relation(fields: [booth_id], references: [id])
+
+    created_at DateTime @default(now())
+}
+
+enum ReviewType {
+    BOOTH // รีวิวเฉพาะบูธ
+    MARKET // รีวิวภาพรวมตลาด
 }
 
 model Review {
-    id         String   @id @default(uuid()) @db.Uuid
-    rating     Decimal  @db.Decimal(2, 1)
+    id         String     @id @default(uuid()) @db.Uuid
+    rating     Decimal    @db.Decimal(2, 1)
     comment    String?
-    created_at DateTime @default(now())
-    // Relation with User model
-    user_id    String   @db.Uuid
-    user       User     @relation(fields: [user_id], references: [id])
+    type       ReviewType @default(BOOTH)
+    created_at DateTime   @default(now())
+
+    user_id String @db.Uuid
+    user    User   @relation(fields: [user_id], references: [id])
+
+    // ทุกรีวิวควรอ้างอิง Booth ที่ผู้เช่าเคยใช้งาน (เพื่อ Verify ว่ามาจริง)
+    booth_id String @db.Uuid
+    booth    Booth  @relation(fields: [booth_id], references: [id])
 }

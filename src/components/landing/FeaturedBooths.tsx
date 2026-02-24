@@ -7,8 +7,8 @@ const allBooths = [
     price: 3500.0,
     is_available: true,
     type: "BOOKING" as const, // BoothType enum
-    latitude: "13.75633000",
-    longitude: "100.50177000",
+    // latitude: "13.75633000",
+    // longitude: "100.50177000",
     user_id: "550e8400-e29b-41d4-a716-446655440010",
     images: [
       {
@@ -29,8 +29,8 @@ const allBooths = [
     price: 2500.0,
     is_available: false, // ถูกจองแล้ว - จะไม่แสดง
     type: "BOOKING" as const,
-    latitude: "13.75640000",
-    longitude: "100.50180000",
+    // latitude: "13.75640000",
+    // longitude: "100.50180000",
     user_id: "550e8400-e29b-41d4-a716-446655440011",
     images: [
       {
@@ -46,8 +46,8 @@ const allBooths = [
     price: 2000.0,
     is_available: true,
     type: "BOOKING" as const,
-    latitude: "13.75650000",
-    longitude: "100.50190000",
+    // latitude: "13.75650000",
+    // longitude: "100.50190000",
     user_id: "550e8400-e29b-41d4-a716-446655440012",
     images: [
       {
@@ -68,8 +68,8 @@ const allBooths = [
     price: 0,
     is_available: true,
     type: "FREE" as const, // พื้นที่ฟรี
-    latitude: "13.75660000",
-    longitude: "100.50200000",
+    // latitude: "13.75660000",
+    // longitude: "100.50200000",
     user_id: "550e8400-e29b-41d4-a716-446655440013",
     images: [
       {
@@ -179,14 +179,14 @@ export default function FeaturedBooths() {
                     <Store size={14} /> {booth.type}
                   </span>
                   {/* แสดง Location แบบย่อๆ (หรือจะใช้ Lat/Long จริงก็ได้ แต่ใน UI ผู้ใช้มักไม่อ่านพิกัด) */}
-                  <span
+                  {/* <span
                     className="flex items-center gap-1 truncate text-xs text-gray-400"
                     title={`Lat: ${booth.latitude}, Long: ${booth.longitude}`}
                   >
                     <MapPin size={14} />
                     {/* แปลงพิกัดเป็นข้อความสั้นๆ หรือใช้ชื่อโซนจาก Name */}
-                    โซนแผนที่
-                  </span>
+                    {/* โซนแผนที่
+                  </span> */}
                 </div>
 
                 {/* Name */}

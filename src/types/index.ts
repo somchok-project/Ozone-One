@@ -66,8 +66,8 @@ export interface Booth {
   price: number;
   is_available: boolean;
   type: BoothType;
-  latitude: number; // Decimal in DB, number in JS/TS usually fine for frontend
-  longitude: number;
+  // latitude: number; // Decimal in DB, number in JS/TS usually fine for frontend
+  // longitude: number;
   images?: Image[];
   bookings?: Booking[];
   user_id: string;

@@ -33,8 +33,8 @@ export default async function EditBoothPage({ params }: { params: { id: string }
         price: booth.price,
         is_available: booth.is_available.toString(),
         user_id: booth.user_id,
-        latitude: Number(booth.latitude),
-        longitude: Number(booth.longitude),
+        // latitude: Number(booth.latitude),
+        // longitude: Number(booth.longitude),
         dimension: booth.dimension,
     };
 
