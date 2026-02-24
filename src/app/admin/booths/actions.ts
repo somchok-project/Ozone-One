@@ -23,7 +23,6 @@ export async function createBoothAction(formData: FormData) {
         await db.booth.create({
             data: {
                 name,
-                type,
                 price,
                 is_available,
                 user_id,
@@ -60,7 +59,6 @@ export async function updateBoothAction(id: string, formData: FormData) {
             where: { id },
             data: {
                 name,
-                type,
                 price,
                 is_available,
                 user_id,
