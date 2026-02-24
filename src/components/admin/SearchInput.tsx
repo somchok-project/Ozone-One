@@ -29,7 +29,7 @@ export function SearchInput({ placeholder, className }: { placeholder: string; c
     return (
         <div className="relative group w-full">
             {/* Search Icon */}
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-200">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2">
                 <Search className={`h-4 w-4 ${query ? 'text-orange-500' : 'text-slate-400 group-focus-within:text-orange-500'}`} />
             </div>
 
