@@ -4,12 +4,15 @@ import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { MessageSquare } from "lucide-react";
 import ReviewCard from "@/components/admin/reviews/ReviewCard";
+import { Pagination } from "@/components/admin/Pagination";
 
 interface ReviewsSectionProps {
   recentReviews: any[];
+  totalReviewPages: number;
+  currentReviewPage: number;
 }
 
-export default function ReviewsSection({ recentReviews }: ReviewsSectionProps) {
+export default function ReviewsSection({ recentReviews, totalReviewPages, currentReviewPage }: ReviewsSectionProps) {
   return (
     <Card className="border-none bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -42,6 +45,16 @@ export default function ReviewsSection({ recentReviews }: ReviewsSectionProps) {
             </div>
           )}
         </div>
+        
+        {totalReviewPages > 1 && (
+          <div className="pt-4 border-t border-slate-50 mt-4">
+            <Pagination 
+              totalPages={totalReviewPages} 
+              currentPage={currentReviewPage} 
+              pageParamName="reviewPage" 
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

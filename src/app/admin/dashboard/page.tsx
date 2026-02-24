@@ -6,7 +6,9 @@ import BookingSection from "./_components/booking-section";
 import ReviewsSection from "./_components/reviews-section";
 import { getDashboardStats } from "./actions";
 
-export default async function DashboardPage() {
+export default async function DashboardPage(props: {
+  searchParams?: Promise<{ bookingPage?: string; reviewPage?: string }>;
+}) {
   const session = await auth();
 
   if (!session?.user) {
@@ -17,6 +19,8 @@ export default async function DashboardPage() {
     redirect("/customer");
   }
 
+  const searchParams = await props.searchParams;
+
   const {
     revenueThisMonth,
     revenueChange,
@@ -26,7 +30,14 @@ export default async function DashboardPage() {
     totalCustomers,
     recentBookings,
     recentReviews,
-  } = await getDashboardStats();
+    totalBookingPages,
+    currentBookingPage,
+    totalReviewPages,
+    currentReviewPage,
+  } = await getDashboardStats({
+    bookingPage: searchParams?.bookingPage,
+    reviewPage: searchParams?.reviewPage,
+  });
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -41,12 +52,20 @@ export default async function DashboardPage() {
           totalCustomers={totalCustomers}
         />
 
-        <div className="grid gap-8 ">
+        <div className="grid gap-8">
           {/* Recent Bookings */}
-          <BookingSection recentBookings={recentBookings} />
+          <BookingSection 
+            recentBookings={recentBookings} 
+            totalBookingPages={totalBookingPages} 
+            currentBookingPage={currentBookingPage} 
+          />
 
           {/* Recent Reviews */}
-          <ReviewsSection recentReviews={recentReviews} />
+          <ReviewsSection 
+            recentReviews={recentReviews} 
+            totalReviewPages={totalReviewPages} 
+            currentReviewPage={currentReviewPage} 
+          />
         </div>
       </div>
     </div>

@@ -2,9 +2,11 @@
 
 import { db } from "@/server/db";
 
-export async function getReviews(params: { q?: string; rating?: string }) {
+export async function getReviews(params: { q?: string; rating?: string; page?: string }) {
     const query = params.q || "";
     const ratingFilter = params.rating || "all";
+    const currentPage = Number(params.page) || 1;
+    const ITEMS_PER_PAGE = 10;
 
     const whereClause: any = {};
     if (ratingFilter !== "all" && !isNaN(Number(ratingFilter))) {
@@ -23,14 +25,19 @@ export async function getReviews(params: { q?: string; rating?: string }) {
         ];
     }
 
-    const reviewsRaw = await db.review.findMany({
-        where: whereClause,
-        include: {
-            user: true,
-            booth: true,
-        },
-        orderBy: { created_at: "desc" },
-    });
+    const [reviewsRaw, totalCount] = await Promise.all([
+        db.review.findMany({
+            where: whereClause,
+            include: {
+                user: true,
+                booth: true,
+            },
+            orderBy: { created_at: "desc" },
+            skip: (currentPage - 1) * ITEMS_PER_PAGE,
+            take: ITEMS_PER_PAGE,
+        }),
+        db.review.count({ where: whereClause })
+    ]);
 
     // Convert Decimal to number for serialization
     const reviews = reviewsRaw.map((review) => ({
@@ -46,6 +53,8 @@ export async function getReviews(params: { q?: string; rating?: string }) {
 
     return {
         reviews,
-        totalCount: reviews.length,
+        totalCount,
+        totalPages: Math.ceil(totalCount / ITEMS_PER_PAGE),
+        currentPage,
     };
 }

@@ -4,12 +4,15 @@ import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { CalendarDays } from "lucide-react";
 import BookingCard from "@/components/admin/bookings/BookingCard";
+import { Pagination } from "@/components/admin/Pagination";
 
 interface BookingSectionProps {
   recentBookings: any[];
+  totalBookingPages: number;
+  currentBookingPage: number;
 }
 
-export default function BookingSection({ recentBookings }: BookingSectionProps) {
+export default function BookingSection({ recentBookings, totalBookingPages, currentBookingPage }: BookingSectionProps) {
   return (
     <Card className="border-none bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -42,6 +45,16 @@ export default function BookingSection({ recentBookings }: BookingSectionProps) 
             </div>
           )}
         </div>
+        
+        {totalBookingPages > 1 && (
+          <div className="pt-4 border-t border-slate-50 mt-4">
+            <Pagination 
+              totalPages={totalBookingPages} 
+              currentPage={currentBookingPage} 
+              pageParamName="bookingPage" 
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

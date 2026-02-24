@@ -6,7 +6,7 @@ import ReviewFilters from "./_components/ReviewFilters";
 import ReviewFeed from "./_components/ReviewFeed";
 
 export default async function ReviewsPage(props: {
-    searchParams?: Promise<{ q?: string; rating?: string }>;
+    searchParams?: Promise<{ q?: string; rating?: string; page?: string }>;
 }) {
     const session = await auth();
 
@@ -15,9 +15,10 @@ export default async function ReviewsPage(props: {
     }
 
     const searchParams = await props.searchParams;
-    const { reviews, totalCount } = await getReviews({
+    const { reviews, totalCount, totalPages, currentPage } = await getReviews({
         q: searchParams?.q,
         rating: searchParams?.rating,
+        page: searchParams?.page,
     });
 
     return (
@@ -25,7 +26,7 @@ export default async function ReviewsPage(props: {
             <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6">
                 <ReviewHeader totalCount={totalCount} />
                 <ReviewFilters />
-                <ReviewFeed reviews={reviews} />
+                <ReviewFeed reviews={reviews} totalPages={totalPages} currentPage={currentPage} />
             </div>
         </div>
     );

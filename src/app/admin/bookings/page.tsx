@@ -18,9 +18,12 @@ import { SearchInput } from "@/components/admin/SearchInput";
 import { formatCurrency, formatThaiDateTime } from "@/lib/utils/format";
 import { getColorStatus } from "@/lib/utils/color";
 import { getLabelStatus } from "@/lib/utils/label";
+import { Pagination } from "@/components/admin/Pagination";
+
+const ITEMS_PER_PAGE = 10;
 
 export default async function BookingsPage(props: {
-    searchParams?: Promise<{ q?: string; status?: string }>;
+    searchParams?: Promise<{ q?: string; status?: string; page?: string }>;
 }) {
     const session = await auth();
 
@@ -31,6 +34,7 @@ export default async function BookingsPage(props: {
     const searchParams = await props.searchParams;
     const query = searchParams?.q || "";
     const statusFilter = searchParams?.status || "all";
+    const currentPage = Number(searchParams?.page) || 1;
 
     const whereClause: any = {
         ...(statusFilter !== "all" ? { payment_status: statusFilter } : {}),
@@ -44,11 +48,18 @@ export default async function BookingsPage(props: {
         ];
     }
 
-    const bookings = await db.booking.findMany({
-        where: whereClause,
-        include: { user: true, booth: true },
-        orderBy: { created_at: "desc" },
-    });
+    const [bookings, totalCount] = await Promise.all([
+        db.booking.findMany({
+            where: whereClause,
+            include: { user: true, booth: true },
+            orderBy: { created_at: "desc" },
+            skip: (currentPage - 1) * ITEMS_PER_PAGE,
+            take: ITEMS_PER_PAGE,
+        }),
+        db.booking.count({ where: whereClause })
+    ]);
+
+    const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
     return (
         <div className="min-h-screen bg-[#FAFAFA]">
@@ -172,6 +183,13 @@ export default async function BookingsPage(props: {
                                 </TableBody>
                             </Table>
                         </div>
+                        
+                        {/* Pagination Component */}
+                        {totalPages > 1 && (
+                            <div className="border-t border-slate-100 p-4">
+                                <Pagination totalPages={totalPages} currentPage={currentPage} />
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

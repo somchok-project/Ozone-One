@@ -5,11 +5,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatThaiDate } from "@/lib/utils/format";
 
+import { Pagination } from "@/components/admin/Pagination";
+
 interface ReviewFeedProps {
     reviews: any[];
+    totalPages: number;
+    currentPage: number;
 }
 
-export default function ReviewFeed({ reviews }: ReviewFeedProps) {
+export default function ReviewFeed({ reviews, totalPages, currentPage }: ReviewFeedProps) {
     return (
         <div className="space-y-4">
             {reviews.map((review) => (
@@ -29,7 +33,7 @@ export default function ReviewFeed({ reviews }: ReviewFeedProps) {
                                 </Avatar>
                                 <div className="flex flex-col overflow-hidden">
                                     <span className="truncate font-bold text-slate-900">
-                                        {review.user.name || "Anonymous"}
+                                        {review.user.name || "ไม่ระบุชื่อ"}
                                     </span>
                                     <span className="truncate text-xs text-slate-400">
                                         {review.user.email}
@@ -78,6 +82,11 @@ export default function ReviewFeed({ reviews }: ReviewFeedProps) {
                     </div>
                     <h3 className="text-lg font-bold text-slate-900">ไม่พบรีวิวที่คุณค้นหา</h3>
                     <p className="text-slate-400">ลองเปลี่ยนคำค้นหาหรือตัวกรองคะแนน</p>
+                </div>
+            )}
+            {totalPages > 1 && (
+                <div className="pt-4 border-t border-slate-100">
+                    <Pagination totalPages={totalPages} currentPage={currentPage} />
                 </div>
             )}
         </div>

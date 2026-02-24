@@ -2,7 +2,11 @@
 
 import { db } from "@/server/db";
 
-export async function getDashboardStats() {
+export async function getDashboardStats(params?: { bookingPage?: string; reviewPage?: string }) {
+  const currentBookingPage = Number(params?.bookingPage) || 1;
+  const currentReviewPage = Number(params?.reviewPage) || 1;
+  const ITEMS_PER_PAGE = 5;
+
   const today = new Date();
   
   // 1. รายได้รวมเดือนนี้ (SUCCESS status เท่านั้น)
@@ -62,17 +66,25 @@ export async function getDashboardStats() {
   });
 
   // --- Recent Data for Tables ---
-  const recentBookingsRaw = await db.booking.findMany({
-    take: 5,
-    orderBy: { created_at: "desc" },
-    include: { booth: true, user: true },
-  });
+  const [recentBookingsRaw, totalRecentBookings] = await Promise.all([
+    db.booking.findMany({
+      skip: (currentBookingPage - 1) * ITEMS_PER_PAGE,
+      take: ITEMS_PER_PAGE,
+      orderBy: { created_at: "desc" },
+      include: { booth: true, user: true },
+    }),
+    db.booking.count()
+  ]);
 
-  const recentReviewsRaw = await db.review.findMany({
-    take: 5,
-    orderBy: { created_at: "desc" },
-    include: { user: true, booth: true },
-  });
+  const [recentReviewsRaw, totalRecentReviews] = await Promise.all([
+    db.review.findMany({
+      skip: (currentReviewPage - 1) * ITEMS_PER_PAGE,
+      take: ITEMS_PER_PAGE,
+      orderBy: { created_at: "desc" },
+      include: { user: true, booth: true },
+    }),
+    db.review.count()
+  ]);
 
   // Convert Decimal to number for serialization
   const recentBookings = recentBookingsRaw.map((booking) => ({
@@ -106,5 +118,9 @@ export async function getDashboardStats() {
     totalCustomers,
     recentBookings,
     recentReviews,
+    totalBookingPages: Math.ceil(totalRecentBookings / ITEMS_PER_PAGE),
+    currentBookingPage,
+    totalReviewPages: Math.ceil(totalRecentReviews / ITEMS_PER_PAGE),
+    currentReviewPage,
   };
 }
