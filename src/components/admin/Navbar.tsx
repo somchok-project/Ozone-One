@@ -55,18 +55,14 @@ export default function AdminNavbar({ user }: CustomerNavbarProps) {
                 OZONE<span className="text-orange-600">ADMIN</span>
               </span>
               <span className="text-[10px] font-medium tracking-wider text-gray-400 uppercase">
-                Management Portal
+                ระบบจัดการข้อมูล
               </span>
             </div>
           </Link>
 
           {/* Desktop Menu */}
           <div className="hidden items-center space-x-8 md:flex">
-            {[
-              { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-              { name: "Users", href: "/admin/users", icon: Users },
-              { name: "Booths", href: "/admin/booths", icon: Warehouse },
-            ].map((item) => (
+            {navItemsAdmin.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
@@ -119,7 +115,7 @@ export default function AdminNavbar({ user }: CustomerNavbarProps) {
                     {user?.name ?? "Admin"}
                   </span>
                   <span className="font-normal text-gray-400">
-                    Administrator
+                    ผู้ดูแลระบบ
                   </span>
                 </div>
                 <ChevronDown

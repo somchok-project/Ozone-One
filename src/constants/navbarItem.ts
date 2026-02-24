@@ -1,10 +1,10 @@
 import {
-  Home,
-  ShoppingBag,
   LayoutDashboard,
   Users,
+  Warehouse,
+  Home,
+  ShoppingBag,
   Settings,
-  Book
 } from "lucide-react";
 
 export const navItemsCustomer = [
@@ -13,9 +13,7 @@ export const navItemsCustomer = [
 ];
 
 export const navItemsAdmin = [
-  { name: "หน้าหลัก", href: "/admin", icon: Home },
-  { name: "แดชบอร์ด", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "จัดการบูธ", href: "/admin/booths", icon: Book },
-  { name: "ผู้ใช้", href: "/admin/users", icon: Users },
-  { name: "ตั้งค่า", href: "/admin/settings", icon: Settings },
+  { name: "แดชบอร์ด", href: "/admin", icon: LayoutDashboard },
+  { name: "จัดการบูธ", href: "/admin/booths", icon: Warehouse },
+  { name: "ผู้ใช้งาน", href: "/admin/users", icon: Users },
 ];
