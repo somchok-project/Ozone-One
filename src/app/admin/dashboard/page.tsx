@@ -41,7 +41,7 @@ export default async function DashboardPage() {
           totalCustomers={totalCustomers}
         />
 
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-8 ">
           {/* Recent Bookings */}
           <BookingSection recentBookings={recentBookings} />
 

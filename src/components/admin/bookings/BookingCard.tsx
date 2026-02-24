@@ -1,0 +1,71 @@
+"use client";
+
+import { CalendarDays, ArrowUpRight } from "lucide-react";
+import { formatCurrency, formatThaiDate } from "@/lib/utils/format";
+
+interface BookingCardProps {
+  booking: {
+    id: string;
+    start_date: Date;
+    total_price: number;
+    payment_status: string;
+    booth: {
+      name: string;
+    };
+    user: {
+      name: string | null;
+      email: string;
+    };
+  };
+}
+
+export default function BookingCard({ booking }: BookingCardProps) {
+  return (
+    <div className="group flex items-center justify-between py-5 transition-all first:pt-2 last:pb-2">
+      <div className="flex items-center gap-4">
+        {/* Status Dot */}
+        <div
+          className={`h-2 w-2 rounded-full ${
+            booking.payment_status === "SUCCESS"
+              ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
+              : booking.payment_status === "PENDING"
+                ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]"
+                : "bg-rose-500"
+          }`}
+        />
+
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-bold text-slate-700">{booking.booth.name}</p>
+            <ArrowUpRight className="h-3 w-3 text-slate-300 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+          </div>
+          <p className="text-xs font-medium text-slate-400">
+            {booking.user.name ?? booking.user.email.split("@")[0]} •{" "}
+            {formatThaiDate(booking.start_date)}
+          </p>
+        </div>
+      </div>
+
+      <div className="text-right">
+        <p className="text-sm font-bold text-slate-800">
+          {formatCurrency(booking.total_price)}
+        </p>
+        <p
+          className={`text-[10px] font-bold uppercase tracking-widest ${
+            booking.payment_status === "SUCCESS"
+              ? "text-emerald-500"
+              : booking.payment_status === "PENDING"
+                ? "text-amber-500"
+                : "text-rose-500"
+          }`}
+        >
+          {booking.payment_status === "SUCCESS"
+            ? "ยืนยันแล้ว"
+            : booking.payment_status === "PENDING"
+              ? "รอยืนยัน"
+              : "ยกเลิก"}
+        </p>
+      </div>
+    </div>
+  );
+}
