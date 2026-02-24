@@ -2,7 +2,7 @@ import Link from "next/link";
 import { MapPin, Ruler, Edit, Store } from "lucide-react";
 import { Card, Button } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils/format";
-import { DeleteBoothButton } from "./DeleteBoothButton";
+import { BoothActions } from "./BoothActions";
 
 interface BoothTableProps {
     booths: any[];
@@ -57,14 +57,7 @@ export function BoothTable({ booths }: BoothTableProps) {
                                     </span>
                                 </td>
                                 <td className="px-8 py-6">
-                                    <div className="flex items-center justify-end gap-2">
-                                        <Link href={`/admin/booths/${booth.id}/edit`}>
-                                            <Button variant="ghost" size="sm" className="h-10 w-10 rounded-xl text-slate-400 hover:bg-orange-50 hover:text-orange-500 transition-all">
-                                                <Edit className="h-5 w-5" />
-                                            </Button>
-                                        </Link>
-                                        <DeleteBoothButton boothId={booth.id} />
-                                    </div>
+                                    <BoothActions boothId={booth.id} />
                                 </td>
                             </tr>
                         ))}

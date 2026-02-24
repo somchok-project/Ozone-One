@@ -1,5 +1,6 @@
 import AdminNavbar from "@/components/admin/Navbar";
 import { auth } from "@/server/auth";
+import { Toaster } from 'sonner';
 import type { User } from "@/types/index";
 
 export default async function AdminLayout({
@@ -15,6 +16,7 @@ export default async function AdminLayout({
       <main className="pt-20">
         <div className="min-h-screen bg-gray-50 font-sans">{children}</div>
       </main>
+      <Toaster richColors position="top-right" />
     </div>
   );
 }
