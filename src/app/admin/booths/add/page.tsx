@@ -1,32 +1,43 @@
+// admin/booths/add/page.tsx
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Store } from "lucide-react";
 import { db } from "@/server/db";
 import { BoothForm } from "../_components/BoothForm";
 
 export default async function AddBoothPage() {
-  const users = await db.user.findMany({
-    select: { id: true, name: true, email: true, role: true },
+  // ดึงเฉพาะคนที่มีสิทธิ์จัดการ (Admin) เพื่อมาเป็นคนดูแลบูธ
+  const admins = await db.user.findMany({
+    where: { role: "ADMIN" },
+    select: { id: true, name: true, email: true },
     orderBy: { name: "asc" },
   });
 
-  const userOptions = users.map((u) => ({
+  const adminOptions = admins.map((u) => ({
     value: u.id,
-    label: `${u.name || u.email} (${u.role})`,
+    label: `${u.name || u.email} (Admin)`,
   }));
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        {/* Breadcrumb */}
-        <nav className="mb-6 flex items-center gap-2 text-sm text-gray-500">
-          <Link href="/admin/booths" className="hover:text-orange-600">
-            จัดการบูธ
+    <div className="min-h-screen bg-[#FAFAFA]">
+      <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+        {/* Breadcrumb - Minimal Style */}
+        <nav className="mb-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+          <Link href="/admin/booths" className="hover:text-orange-500 transition-colors">
+            Inventory
           </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-gray-900">เพิ่มบูธใหม่</span>
+          <ChevronRight className="h-3 w-3" />
+          <span className="text-slate-900">Add New Booth</span>
         </nav>
 
-        <BoothForm users={userOptions} />
+        <header className="mb-10">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-200 mb-4">
+                <Store className="h-6 w-6" />
+            </div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">เพิ่มบูธใหม่</h1>
+            <p className="text-slate-500 mt-2">กรอกข้อมูลรายละเอียดบูธเพื่อเปิดให้ลูกค้าทำการจอง</p>
+        </header>
+
+        <BoothForm admins={adminOptions} />
       </div>
     </div>
   );
