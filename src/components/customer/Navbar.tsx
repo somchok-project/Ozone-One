@@ -33,13 +33,24 @@ export default function CustomerNavbar({ user }: CustomerNavbarProps) {
   }, []);
 
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (href: string) => {
+    // "จองพื้นที่" → /customer#booths — also active on /customer/booths/*
+    if (href === "/customer#booths") {
+      return pathname.startsWith("/customer/booths");
+    }
+    // "หน้าหลัก" → /customer — exact match only (not on sub-pages)
+    if (href === "/customer") {
+      return pathname === "/customer";
+    }
+    // Others → starts with match
+    return pathname.startsWith(href);
+  };
 
   return (
     <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md transition-all">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
-          
+
           {/* --- Logo --- */}
           <Link href="/customer" className="group flex items-center gap-2 outline-none">
             <div className="flex flex-col leading-none">
@@ -59,17 +70,15 @@ export default function CustomerNavbar({ user }: CustomerNavbarProps) {
                 key={item.name}
                 href={item.href}
                 className={`group relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 
-                  ${
-                    isActive(item.href)
-                      ? "bg-orange-50 text-orange-600"
-                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                  ${isActive(item.href)
+                    ? "bg-orange-50 text-orange-600"
+                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                   }`}
               >
                 <item.icon
                   size={18}
-                  className={`transition-colors ${
-                    isActive(item.href) ? "text-orange-500" : "text-gray-400 group-hover:text-gray-600"
-                  }`}
+                  className={`transition-colors ${isActive(item.href) ? "text-orange-500" : "text-gray-400 group-hover:text-gray-600"
+                    }`}
                 />
                 {item.name}
               </Link>
@@ -82,10 +91,9 @@ export default function CustomerNavbar({ user }: CustomerNavbarProps) {
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className={`flex items-center gap-3 rounded-full border p-1 pr-4 transition-all duration-200 focus:outline-none
-                  ${
-                    isProfileOpen
-                      ? "border-orange-200 bg-orange-50/50 ring-2 ring-orange-100"
-                      : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                  ${isProfileOpen
+                    ? "border-orange-200 bg-orange-50/50 ring-2 ring-orange-100"
+                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
                   }`}
               >
                 <div className="relative h-9 w-9 overflow-hidden rounded-full border border-gray-100">
@@ -104,15 +112,14 @@ export default function CustomerNavbar({ user }: CustomerNavbarProps) {
                 </div>
                 <div className="flex flex-col items-start text-xs">
                   <span className="font-semibold text-gray-700 max-w-[100px] truncate">
-                    {user?.name }
+                    {user?.name}
                   </span>
                   <span className="text-gray-400 font-normal">Customer</span>
                 </div>
                 <ChevronDown
                   size={14}
-                  className={`text-gray-400 transition-transform duration-200 ${
-                    isProfileOpen ? "rotate-180 text-orange-500" : ""
-                  }`}
+                  className={`text-gray-400 transition-transform duration-200 ${isProfileOpen ? "rotate-180 text-orange-500" : ""
+                    }`}
                 />
               </button>
 
@@ -123,7 +130,7 @@ export default function CustomerNavbar({ user }: CustomerNavbarProps) {
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">บัญชีของฉัน</p>
                     <p className="truncate text-sm font-medium text-gray-900">{user?.email}</p>
                   </div>
-                  
+
                   <div className="h-px bg-gray-50 mx-2 my-1" />
 
                   <Link
@@ -134,7 +141,7 @@ export default function CustomerNavbar({ user }: CustomerNavbarProps) {
                     <Settings size={18} />
                     ตั้งค่าบัญชี
                   </Link>
-                  
+
                   <button
                     onClick={() => logout()}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
@@ -167,35 +174,34 @@ export default function CustomerNavbar({ user }: CustomerNavbarProps) {
                 href={item.href}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors
-                  ${
-                    isActive(item.href)
-                      ? "bg-orange-50 text-orange-600"
-                      : "text-gray-600 hover:bg-gray-50"
+                  ${isActive(item.href)
+                    ? "bg-orange-50 text-orange-600"
+                    : "text-gray-600 hover:bg-gray-50"
                   }`}
               >
                 <item.icon size={20} />
                 {item.name}
               </Link>
             ))}
-            
+
             <div className="my-2 h-px bg-gray-100" />
-            
+
             <div className="px-4 py-2">
-               <div className="flex items-center gap-3 mb-4">
-                  <div className="h-10 w-10 overflow-hidden rounded-full bg-gray-100">
-                    {user?.image ? (
-                        <Image src={user.image} alt="Profile" width={40} height={40} className="object-cover h-full w-full" />
-                    ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-orange-100 text-orange-600"><UserIcon size={20}/></div>
-                    )}
-                  </div>
-                  <div>
-                      <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
-                  </div>
-               </div>
-               
-               <button
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 overflow-hidden rounded-full bg-gray-100">
+                  {user?.image ? (
+                    <Image src={user.image} alt="Profile" width={40} height={40} className="object-cover h-full w-full" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-orange-100 text-orange-600"><UserIcon size={20} /></div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
+                </div>
+              </div>
+
+              <button
                 onClick={() => logout()}
                 className="flex w-full items-center gap-3 rounded-xl border border-red-100 bg-red-50/50 px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
               >
