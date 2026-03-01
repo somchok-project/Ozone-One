@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import {
   Save,
@@ -27,6 +28,16 @@ import {
   Select,
 } from "@/components/ui";
 import { createBoothAction, updateBoothAction } from "../actions";
+import { type BoothItem } from "./BoothConfigurator3D";
+
+const BoothConfigurator3D = dynamic(() => import("./BoothConfigurator3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[500px] items-center justify-center rounded-3xl bg-slate-50 text-sm font-medium text-slate-400">
+      กำลังโหลด 3D Scene...
+    </div>
+  ),
+});
 
 interface BoothFormProps {
   admins: { value: string; label: string }[];
@@ -46,6 +57,15 @@ export function BoothForm({ admins, zones, initialData }: BoothFormProps) {
     initialData?.longitude?.toString() || "",
   );
   const [isLocating, setIsLocating] = useState(false);
+  const [boothItems, setBoothItems] = useState<BoothItem[]>(() => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const raw = (initialData?.booth_items ?? "") as string;
+      return raw ? (JSON.parse(raw) as BoothItem[]) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -401,18 +421,42 @@ export function BoothForm({ admins, zones, initialData }: BoothFormProps) {
             </CardContent>
           </Card>
 
-          {/* Image Upload Placeholder */}
-          <div className="group relative flex aspect-square flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-slate-200 bg-slate-50 p-6 text-center transition-all hover:border-orange-300 hover:bg-orange-50/30">
-            <div className="mb-4 rounded-full bg-white p-4 text-slate-400 shadow-sm transition-all group-hover:scale-110 group-hover:text-orange-500">
-              <Camera className="h-8 w-8" />
-            </div>
-            <h4 className="text-sm font-bold text-slate-900">รูปภาพบูธ</h4>
-            <p className="mt-1 text-xs text-slate-400">
-              คลิกหรือลากรูปภาพมาวางที่นี่เพื่ออัปโหลด (เร็วๆ นี้)
-            </p>
-          </div>
+          {/* Quick info card */}
+          <Card className="overflow-hidden rounded-[2rem] border-none bg-gradient-to-br from-orange-50 to-amber-50 shadow-none ring-1 ring-orange-100">
+            <CardContent className="p-6">
+              <div className="mb-3 flex items-center gap-2">
+                <Camera className="h-4 w-4 text-orange-500" />
+                <span className="text-sm font-bold text-orange-700">3D Booth Configurator</span>
+              </div>
+              <p className="text-xs leading-relaxed text-orange-700/70">
+                จัด Layout เฟอร์นิเจอร์ภายในบูธด้วย 3D Canvas ด้านล่าง
+                เพิ่มโต๊ะ เก้าอี้ ราวแขวน หรือชั้นวางได้ตามต้องการ
+                แล้วกด <strong>บันทึก Layout</strong> เพื่อบันทึก
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* ─── 3D Booth Configurator (full width) ─── */}
+      <Card className="overflow-hidden rounded-[2rem] border-none bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <CardHeader className="border-b border-slate-50 px-8 py-6">
+          <CardTitle className="flex items-center gap-2 text-lg font-bold">
+            <Camera className="h-5 w-5 text-orange-500" />
+            จัด Layout บูธ 3D (Booth Configurator)
+          </CardTitle>
+          <p className="mt-1 text-xs text-slate-400">
+            ลากวางเฟอร์นิเจอร์ภายในบูธ — คลิกเพื่อเลือก, ลากเพื่อขยับ, กด Rotate เพื่อหมุน
+          </p>
+        </CardHeader>
+        <CardContent className="p-8">
+          <BoothConfigurator3D
+            initialItems={boothItems}
+            onChange={setBoothItems}
+            inputName="booth_items"
+          />
+        </CardContent>
+      </Card>
     </form>
   );
 }
