@@ -8,6 +8,9 @@ import {
   CalendarCheck,
   Map,
   Store,
+  Layers,
+  Star,
+  BookOpen,
 } from "lucide-react";
 
 export const navItemsCustomer = [
@@ -20,5 +23,8 @@ export const navItemsCustomer = [
 export const navItemsAdmin = [
   { name: "แดชบอร์ด", href: "/admin", icon: LayoutDashboard },
   { name: "จัดการบูธ", href: "/admin/booths", icon: Warehouse },
+  { name: "โซน", href: "/admin/zones", icon: Layers },
+  { name: "การจอง", href: "/admin/bookings", icon: BookOpen },
+  { name: "รีวิว", href: "/admin/reviews", icon: Star },
   { name: "ผู้ใช้งาน", href: "/admin/users", icon: Users },
 ];

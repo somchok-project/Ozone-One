@@ -19,6 +19,7 @@ export async function getBooths(params?: { q?: string; status?: string }) {
     },
     include: {
       user: true,
+      zone: true,
     },
     orderBy: {
       name: "asc",

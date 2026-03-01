@@ -13,7 +13,9 @@ import {
 import { formatCurrency, formatThaiDateTime } from "@/lib/utils/format";
 import { getColorStatus } from "@/lib/utils/color";
 import { getLabelStatus } from "@/lib/utils/label";
+import { getBookingStatusColor, getBookingStatusLabel } from "@/lib/utils/bookingStatus";
 import { Pagination } from "@/components/admin/Pagination";
+import { BookingActions } from "./BookingActions";
 
 interface BookingTableProps {
     bookings: any[];
@@ -33,8 +35,9 @@ export function BookingTable({ bookings, totalPages, currentPage }: BookingTable
                                 <TableHead className="text-slate-500 font-bold text-[11px] uppercase tracking-wider">ข้อมูลคนเช่า</TableHead>
                                 <TableHead className="text-slate-500 font-bold text-[11px] uppercase tracking-wider">ช่วงเวลาที่จอง</TableHead>
                                 <TableHead className="text-slate-500 font-bold text-[11px] uppercase tracking-wider">ยอดเงิน</TableHead>
-                                <TableHead className="text-slate-500 font-bold text-[11px] uppercase tracking-wider">สถานะ</TableHead>
-                                <TableHead className="pr-8 text-right text-slate-500 font-bold text-[11px] uppercase tracking-wider">สลิป</TableHead>
+                                <TableHead className="text-slate-500 font-bold text-[11px] uppercase tracking-wider">สถานะจ่าย</TableHead>
+                                <TableHead className="text-slate-500 font-bold text-[11px] uppercase tracking-wider">สถานะจอง</TableHead>
+                                <TableHead className="pr-8 text-right text-slate-500 font-bold text-[11px] uppercase tracking-wider">สลิป / จัดการ</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -80,22 +83,32 @@ export function BookingTable({ bookings, totalPages, currentPage }: BookingTable
                                             {getLabelStatus(booking.payment_status)}
                                         </span>
                                     </TableCell>
+                                    <TableCell>
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getBookingStatusColor(booking.booking_status)}`}>
+                                            {getBookingStatusLabel(booking.booking_status)}
+                                        </span>
+                                    </TableCell>
                                     <TableCell className="pr-8 text-right">
-                                        {booking.payment_slip_url ? (
-                                            <a href={booking.payment_slip_url} target="_blank" rel="noopener noreferrer">
-                                                <Button variant="ghost" size="sm" className="h-9 w-9 rounded-xl text-orange-500 hover:bg-orange-100 hover:text-orange-600">
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                            </a>
-                                        ) : (
-                                            <span className="text-slate-300">-</span>
-                                        )}
+                                        <div className="flex items-center justify-end gap-2">
+                                            {booking.payment_slip_url && (
+                                                <a href={booking.payment_slip_url} target="_blank" rel="noopener noreferrer">
+                                                    <Button variant="ghost" size="sm" className="h-9 w-9 rounded-xl text-orange-500 hover:bg-orange-100 hover:text-orange-600">
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                </a>
+                                            )}
+                                            <BookingActions
+                                                bookingId={booking.id}
+                                                bookingStatus={booking.booking_status}
+                                                paymentStatus={booking.payment_status}
+                                            />
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {bookings.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-20 text-slate-400 italic">
+                                    <TableCell colSpan={7} className="text-center py-20 text-slate-400 italic">
                                         ไม่พบข้อมูลรายการจอง
                                     </TableCell>
                                 </TableRow>

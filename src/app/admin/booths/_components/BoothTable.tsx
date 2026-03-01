@@ -18,6 +18,7 @@ export function BoothTable({ booths }: BoothTableProps) {
                     <thead>
                         <tr className="bg-slate-50/50 border-b border-slate-100">
                             <th className="px-8 py-5 text-slate-500 font-bold text-[11px] uppercase tracking-wider">ชื่อบูธ / ทำเล</th>
+                            <th className="px-6 py-5 text-slate-500 font-bold text-[11px] uppercase tracking-wider">โซน</th>
                             <th className="px-6 py-5 text-slate-500 font-bold text-[11px] uppercase tracking-wider">ขนาด</th>
                             <th className="px-6 py-5 text-slate-500 font-bold text-[11px] uppercase tracking-wider">ราคาเช่า</th>
                             <th className="px-6 py-5 text-slate-500 font-bold text-[11px] uppercase tracking-wider">สถานะ</th>
@@ -37,6 +38,25 @@ export function BoothTable({ booths }: BoothTableProps) {
                                             <span className="text-[11px] text-slate-400">สร้างโดย: {booth.user?.name || "Admin"}</span>
                                         </div>
                                     </div>
+                                </td>
+                                <td className="px-6 py-6">
+                                    {booth.zone ? (
+                                        <span
+                                            className="inline-flex items-center rounded-2xl px-3 py-1 text-xs font-bold"
+                                            style={{
+                                                backgroundColor: booth.zone.color_code ? `${booth.zone.color_code}22` : "#f1f5f9",
+                                                color: booth.zone.color_code ?? "#64748b",
+                                            }}
+                                        >
+                                            <span
+                                                className="mr-1.5 h-2 w-2 rounded-full"
+                                                style={{ backgroundColor: booth.zone.color_code ?? "#94a3b8" }}
+                                            />
+                                            {booth.zone.name}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs text-slate-400">-</span>
+                                    )}
                                 </td>
                                 <td className="px-6 py-6">
                                     <div className="flex items-center gap-2 text-slate-600">
