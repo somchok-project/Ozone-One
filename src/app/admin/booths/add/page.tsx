@@ -17,12 +17,24 @@ export default async function AddBoothPage() {
     label: `${u.name || u.email} (Admin)`,
   }));
 
+  const zones = await db.zone.findMany({
+    orderBy: { name: "asc" },
+  });
+
+  const zoneOptions = zones.map((z) => ({
+    value: z.id,
+    label: z.name,
+  }));
+
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
         {/* Breadcrumb - Minimal Style */}
-        <nav className="mb-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-          <Link href="/admin/booths" className="hover:text-orange-500 transition-colors">
+        <nav className="mb-8 flex items-center gap-2 text-xs font-bold tracking-widest text-slate-400 uppercase">
+          <Link
+            href="/admin/booths"
+            className="transition-colors hover:text-orange-500"
+          >
             Inventory
           </Link>
           <ChevronRight className="h-3 w-3" />
@@ -30,14 +42,18 @@ export default async function AddBoothPage() {
         </nav>
 
         <header className="mb-10">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-200 mb-4">
-                <Store className="h-6 w-6" />
-            </div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">เพิ่มบูธใหม่</h1>
-            <p className="text-slate-500 mt-2">กรอกข้อมูลรายละเอียดบูธเพื่อเปิดให้ลูกค้าทำการจอง</p>
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-200">
+            <Store className="h-6 w-6" />
+          </div>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">
+            เพิ่มบูธใหม่
+          </h1>
+          <p className="mt-2 text-slate-500">
+            กรอกข้อมูลรายละเอียดบูธเพื่อเปิดให้ลูกค้าทำการจอง
+          </p>
         </header>
 
-        <BoothForm admins={adminOptions} />
+        <BoothForm admins={adminOptions} zones={zoneOptions} />
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import {
 } from "@/components/landing";
 import { Reveal } from "@/components/ui/Reveal";
 
+
 export default function Home({
   searchParams,
 }: {
@@ -22,6 +23,7 @@ export default function Home({
         <MarketOverview />
       </Reveal>
       <Reveal width="100%" className="block" delay={0.1}>
+    
         <FeaturedBooths searchParams={searchParams as any} />
       </Reveal>
       <Footer />

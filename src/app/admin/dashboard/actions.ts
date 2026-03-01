@@ -2,13 +2,16 @@
 
 import { db } from "@/server/db";
 
-export async function getDashboardStats(params?: { bookingPage?: string; reviewPage?: string }) {
+export async function getDashboardStats(params?: {
+  bookingPage?: string;
+  reviewPage?: string;
+}) {
   const currentBookingPage = Number(params?.bookingPage) || 1;
   const currentReviewPage = Number(params?.reviewPage) || 1;
   const ITEMS_PER_PAGE = 5;
 
   const today = new Date();
-  
+
   // 1. รายได้รวมเดือนนี้ (SUCCESS status เท่านั้น)
   const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -41,9 +44,11 @@ export async function getDashboardStats(params?: { bookingPage?: string; reviewP
   let revenueChangeType: "positive" | "negative" | "neutral" = "neutral";
 
   if (revenueLastMonth > 0) {
-    const diff = ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100;
+    const diff =
+      ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100;
     revenueChange = `${diff > 0 ? "+" : ""}${diff.toFixed(0)}% จากเดือนก่อน`;
-    revenueChangeType = diff > 0 ? "positive" : diff < 0 ? "negative" : "neutral";
+    revenueChangeType =
+      diff > 0 ? "positive" : diff < 0 ? "negative" : "neutral";
   } else if (revenueThisMonth > 0) {
     revenueChange = "ใหม่ในเดือนนี้";
     revenueChangeType = "positive";
@@ -73,7 +78,7 @@ export async function getDashboardStats(params?: { bookingPage?: string; reviewP
       orderBy: { created_at: "desc" },
       include: { booth: true, user: true },
     }),
-    db.booking.count()
+    db.booking.count(),
   ]);
 
   const [recentReviewsRaw, totalRecentReviews] = await Promise.all([
@@ -83,30 +88,42 @@ export async function getDashboardStats(params?: { bookingPage?: string; reviewP
       orderBy: { created_at: "desc" },
       include: { user: true, booth: true },
     }),
-    db.review.count()
+    db.review.count(),
   ]);
 
   // Convert Decimal to number for serialization
   const recentBookings = recentBookingsRaw.map((booking) => ({
     ...booking,
-    booth: {
-      ...booking.booth,
-      latitude: booking.booth.latitude ? Number(booking.booth.latitude) : null,
-      longitude: booking.booth.longitude ? Number(booking.booth.longitude) : null,
-      price: Number(booking.booth.price),
-    },
+    booth: booking.booth
+      ? {
+          ...booking.booth,
+          latitude: booking.booth.latitude
+            ? Number(booking.booth.latitude)
+            : null,
+          longitude: booking.booth.longitude
+            ? Number(booking.booth.longitude)
+            : null,
+          price: Number(booking.booth.price),
+        }
+      : null,
     total_price: Number(booking.total_price),
   }));
 
   const recentReviews = recentReviewsRaw.map((review) => ({
     ...review,
     rating: Number(review.rating),
-    booth: {
-      ...review.booth,
-      latitude: review.booth.latitude ? Number(review.booth.latitude) : null,
-      longitude: review.booth.longitude ? Number(review.booth.longitude) : null,
-      price: Number(review.booth.price),
-    },
+    booth: review.booth
+      ? {
+          ...review.booth,
+          latitude: review.booth.latitude
+            ? Number(review.booth.latitude)
+            : null,
+          longitude: review.booth.longitude
+            ? Number(review.booth.longitude)
+            : null,
+          price: Number(review.booth.price),
+        }
+      : null,
   }));
 
   return {

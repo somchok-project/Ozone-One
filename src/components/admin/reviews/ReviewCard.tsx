@@ -8,23 +8,23 @@ export default function ReviewCard({ review }: ReviewCardProps) {
   const isMarket = review.type === "MARKET";
 
   return (
-    <div className="group flex flex-col gap-3 py-5 transition-all first:pt-2 last:pb-2 border-b border-slate-50 last:border-none">
+    <div className="group flex flex-col gap-3 border-b border-slate-50 py-5 transition-all first:pt-2 last:border-none last:pb-2">
       {/* Upper Row: Status & Rating */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {/* Label Badge */}
           <span
-            className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-              isMarket 
-                ? "bg-blue-50 text-blue-600 border border-blue-100" 
-                : "bg-orange-50 text-orange-600 border border-orange-100"
+            className={`rounded-md px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
+              isMarket
+                ? "border border-blue-100 bg-blue-50 text-blue-600"
+                : "border border-orange-100 bg-orange-50 text-orange-600"
             }`}
           >
             {getLabelReviewType(review)}
           </span>
           {/* Target Name */}
           <span className="text-sm font-bold text-slate-700">
-            {review.booth.name}
+            {review.booth?.name ?? "ไม่ระบุบูธ (ถูกลบออกแล้ว)"}
           </span>
         </div>
 
@@ -39,7 +39,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
 
       {/* Middle Row: Content */}
       <div className="flex-1">
-        <p className="text-[14px] leading-relaxed text-slate-500 group-hover:text-slate-600 italic">
+        <p className="text-[14px] leading-relaxed text-slate-500 italic group-hover:text-slate-600">
           {review.comment ? `"${review.comment}"` : "ไม่มีข้อความความคิดเห็น"}
         </p>
       </div>
@@ -55,7 +55,7 @@ export default function ReviewCard({ review }: ReviewCardProps) {
             {review.user.name ?? review.user.email.split("@")[0]}
           </span>
         </div>
-        
+
         {/* Time - Option: สามารถส่ง created_at มาเพิ่มได้ */}
         {/* <span className="text-[10px] text-slate-300">2 ชม. ที่แล้ว</span> */}
       </div>
