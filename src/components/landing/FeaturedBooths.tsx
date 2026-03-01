@@ -57,7 +57,7 @@ export default async function FeaturedBooths({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <FeaturedBoothsFilter zones={zones} />
           <Link
-            href="/customer"
+            href="/customer/booths"
             className="group hidden items-center gap-2 rounded-2xl bg-gray-50 px-6 py-3 text-sm font-bold text-gray-900 transition-all hover:bg-orange-600 hover:text-white sm:flex"
           >
             ดูทั้งหมด

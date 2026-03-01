@@ -10,6 +10,7 @@ import {
   DollarSign,
   Camera,
   ChevronLeft,
+  ChevronRight,
   Store,
   ExternalLink,
   MousePointerClick,

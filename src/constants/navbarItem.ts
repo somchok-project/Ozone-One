@@ -6,11 +6,14 @@ import {
   ShoppingBag,
   Settings,
   CalendarCheck,
+  Map,
+  Store,
 } from "lucide-react";
 
 export const navItemsCustomer = [
   { name: "หน้าหลัก", href: "/customer", icon: Home },
-  { name: "จองพื้นที่", href: "/customer#booths", icon: CalendarCheck },
+  { name: "ค้นหาบูธ", href: "/customer/booths", icon: Store },
+  { name: "แผนผัง 3D", href: "/customer/map", icon: Map },
   { name: "พื้นที่ของฉัน", href: "/customer/my-space", icon: ShoppingBag },
 ];
 

@@ -4,6 +4,30 @@ import path from "path";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 
+/** Send a LINE push message via LINE Messaging API */
+async function sendLineNotification(message: string) {
+    const channelToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    const userId = process.env.LINE_ADMIN_USER_ID; // or LINE_GROUP_ID
+
+    if (!channelToken || !userId) return;
+
+    try {
+        await fetch("https://api.line.me/v2/bot/message/push", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${channelToken}`,
+            },
+            body: JSON.stringify({
+                to: userId,
+                messages: [{ type: "text", text: message }],
+            }),
+        });
+    } catch (err) {
+        console.error("LINE notify error:", err);
+    }
+}
+
 export async function POST(request: NextRequest) {
     try {
         const session = await auth();
@@ -121,6 +145,24 @@ export async function POST(request: NextRequest) {
                     booking_status: "CONFIRMED",
                 },
             });
+
+            // Notify admin via LINE
+            const bookingWithUser = await db.booking.findUnique({
+                where: { id: bookingId },
+                include: {
+                    user: { select: { name: true, email: true } },
+                    booth: { select: { name: true } },
+                },
+            });
+            if (bookingWithUser) {
+                const lineMsg =
+                    `✅ ยืนยันการชำระเงินแล้ว!\n` +
+                    `👤 ลูกค้า: ${bookingWithUser.user.name ?? bookingWithUser.user.email}\n` +
+                    `🏪 บูธ: ${bookingWithUser.booth.name}\n` +
+                    `💰 ยอด: ฿${bookingWithUser.total_price.toLocaleString()}\n` +
+                    `🧾 Booking ID: ${bookingId.slice(0, 8)}...`;
+                await sendLineNotification(lineMsg);
+            }
         } else {
             await db.booking.update({
                 where: { id: bookingId },

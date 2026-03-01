@@ -14,7 +14,7 @@ import {
 } from "@/components/ui";
 import { updateUserAction } from "../actions";
 
-type Role = "ADMIN" | "USER";
+type Role = "ADMIN" | "CUSTOMER";
 
 interface UserInitialData {
     id: string;
@@ -33,8 +33,8 @@ export function UserForm({
     const [isPending, startTransition] = useTransition();
 
     const roleOptions = [
-        { value: "USER", label: "ผู้ใช้งานทั่วไป" },
-        { value: "ADMIN", label: "ผู้ดูแลระบบ" },
+        { value: "CUSTOMER", label: "ผู้ใช้งานทั่วไป (Customer)" },
+        { value: "ADMIN", label: "ผู้ดูแลระบบ (Admin)" },
     ];
 
     async function handleSubmit(formData: FormData) {

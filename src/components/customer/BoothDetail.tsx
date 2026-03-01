@@ -13,9 +13,11 @@ import {
     CheckCircle,
     Navigation,
     MessageSquare,
+    PenLine,
 } from "lucide-react";
 import Link from "next/link";
 import BookingModal from "./BookingModal";
+import WriteReviewModal from "./WriteReviewModal";
 
 interface BoothDetailProps {
     booth: {
@@ -44,6 +46,7 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [showBookingModal, setShowBookingModal] = useState(false);
+    const [showReviewModal, setShowReviewModal] = useState(false);
 
     const images =
         booth.images.length > 0
@@ -280,15 +283,24 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
                     {/* ======= Reviews Section ======= */}
                     <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
                         <div className="border-b border-gray-100 px-6 py-4">
-                            <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                                <MessageSquare size={18} className="text-orange-500" />
-                                รีวิวจากผู้ใช้งาน
-                                {booth.reviews.length > 0 && (
-                                    <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-600">
-                                        {booth.reviews.length}
-                                    </span>
-                                )}
-                            </h2>
+                            <div className="flex items-center justify-between">
+                                <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                                    <MessageSquare size={18} className="text-orange-500" />
+                                    รีวิวจากผู้ใช้งาน
+                                    {booth.reviews.length > 0 && (
+                                        <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-600">
+                                            {booth.reviews.length}
+                                        </span>
+                                    )}
+                                </h2>
+                                <button
+                                    onClick={() => setShowReviewModal(true)}
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-100"
+                                >
+                                    <PenLine size={13} />
+                                    เขียนรีวิว
+                                </button>
+                            </div>
 
                             {/* Rating summary */}
                             {booth.reviews.length > 0 && (
@@ -504,6 +516,15 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
                     days={days}
                     totalPrice={totalPrice}
                     onClose={() => setShowBookingModal(false)}
+                />
+            )}
+
+            {/* Write Review Modal */}
+            {showReviewModal && (
+                <WriteReviewModal
+                    boothId={booth.id}
+                    boothName={booth.name}
+                    onClose={() => setShowReviewModal(false)}
                 />
             )}
         </>

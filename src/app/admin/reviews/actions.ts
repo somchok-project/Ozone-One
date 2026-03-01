@@ -43,12 +43,12 @@ export async function getReviews(params: { q?: string; rating?: string; page?: s
     const reviews = reviewsRaw.map((review) => ({
         ...review,
         rating: Number(review.rating),
-        booth: {
+        booth: review.booth ? {
             ...review.booth,
             latitude: review.booth.latitude ? Number(review.booth.latitude) : null,
             longitude: review.booth.longitude ? Number(review.booth.longitude) : null,
             price: Number(review.booth.price),
-        },
+        } : null,
     }));
 
     return {

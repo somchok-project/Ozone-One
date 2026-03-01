@@ -57,6 +57,31 @@ export const boothRouter = createTRPCRouter({
       });
     }),
 
+  /** Get all booths with 3D position data for the interactive map */
+  getMapData: publicProcedure.query(async ({ ctx }) => {
+    return ctx.db.booth.findMany({
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        is_available: true,
+        dimension: true,
+        position_x: true,
+        position_y: true,
+        position_z: true,
+        rotation_x: true,
+        rotation_y: true,
+        rotation_z: true,
+        scale: true,
+        model_url: true,
+        zone: { select: { id: true, name: true, color_code: true } },
+        images: { take: 1, select: { path: true } },
+        _count: { select: { reviews: true } },
+      },
+      orderBy: { created_at: "asc" },
+    });
+  }),
+
   getStats: publicProcedure.query(async ({ ctx }) => {
     const [totalBooths, avgRating, totalBookings] = await Promise.all([
       ctx.db.booth.count(),

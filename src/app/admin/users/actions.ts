@@ -3,7 +3,7 @@
 import { db } from "@/server/db";
 import { revalidatePath } from "next/cache";
 
-type Role = "ADMIN" | "USER";
+type Role = "ADMIN" | "CUSTOMER";
 
 export async function updateUserAction(id: string, formData: FormData) {
     try {

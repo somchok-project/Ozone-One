@@ -12,10 +12,12 @@ import {
     ShoppingBag,
     CreditCard,
     Trash2,
+    MessageSquare,
 } from "lucide-react";
 import { api } from "@/trpc/react";
 import { useRouter } from "next/navigation";
 import PaymentModal from "./PaymentModal";
+import WriteReviewModal from "./WriteReviewModal";
 
 interface Booking {
     id: string;
@@ -73,6 +75,7 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
     const [paymentBooking, setPaymentBooking] = useState<Booking | null>(null);
     const [cancellingId, setCancellingId] = useState<string | null>(null);
     const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+    const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
     const router = useRouter();
 
     const cancelBooking = api.booking.cancelBooking.useMutation({
@@ -147,6 +150,7 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
                             );
 
                             const isPending = booking.booking_status === "PENDING";
+                            const isCompleted = booking.booking_status === "COMPLETED" || booking.booking_status === "CONFIRMED";
                             const needsPayment = booking.payment_status === "PENDING";
                             const isCancelling = cancellingId === booking.id;
 
@@ -230,6 +234,17 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
                                                         </button>
                                                     )}
 
+                                                    {/* ปุ่มรีวิว — สำหรับ booking ที่ confirmed/completed */}
+                                                    {isCompleted && (
+                                                        <button
+                                                            onClick={() => setReviewBooking(booking)}
+                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700 transition-all hover:bg-amber-100"
+                                                        >
+                                                            <MessageSquare size={14} />
+                                                            รีวิว
+                                                        </button>
+                                                    )}
+
                                                     {/* ปุ่มยกเลิก — สำหรับ booking ที่ PENDING */}
                                                     {isPending && (
                                                         confirmCancelId === booking.id ? (
@@ -275,6 +290,15 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
                     booking={paymentBooking}
                     onClose={() => setPaymentBooking(null)}
                     onSuccess={() => setPaymentBooking(null)}
+                />
+            )}
+
+            {/* Write Review Modal */}
+            {reviewBooking && (
+                <WriteReviewModal
+                    boothId={reviewBooking.booth.id}
+                    boothName={reviewBooking.booth.name}
+                    onClose={() => setReviewBooking(null)}
                 />
             )}
         </div>

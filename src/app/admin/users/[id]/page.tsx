@@ -20,7 +20,7 @@ export default async function EditUserPage({ params }: { params: { id: string } 
         name: user.name,
         email: user.email,
         phone_number: user.phone_number,
-        role: user.role,
+        role: user.role as "ADMIN" | "CUSTOMER",
     };
 
     return (

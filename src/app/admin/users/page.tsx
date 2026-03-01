@@ -77,9 +77,9 @@ export default async function UsersPage(props: {
                     ผู้ดูแลระบบ
                   </Button>
                 </Link>
-                <Link href={`/admin/users?${new URLSearchParams({ ...(query ? { q: query } : {}), role: 'USER' }).toString()}`}>
-                  <Button variant={roleFilter === 'USER' ? 'primary' : 'ghost'} size="sm" className="cursor-pointer">
-                    ผู้ใช้ทั่วไป
+                <Link href={`/admin/users?${new URLSearchParams({ ...(query ? { q: query } : {}), role: 'CUSTOMER' }).toString()}`}>
+                  <Button variant={roleFilter === 'CUSTOMER' ? 'primary' : 'ghost'} size="sm" className="cursor-pointer">
+                    ลูกค้า
                   </Button>
                 </Link>
               </div>
@@ -132,7 +132,7 @@ export default async function UsersPage(props: {
                             : "bg-blue-50 text-blue-700 hover:bg-blue-50"
                         }
                       >
-                        {user.role === "ADMIN" ? "ผู้ดูแลระบบ" : "ผู้ใช้งานทั่วไป"}
+                        {user.role === "ADMIN" ? "ผู้ดูแลระบบ" : "ลูกค้า"}
                       </Badge>
                     </TableCell>
                     <TableCell>
