@@ -18,9 +18,10 @@ async function main() {
   // 1. Clean Data (ลบข้อมูลเก่าทิ้งก่อนตามลำดับ Relation)
   await prisma.review.deleteMany();
   await prisma.booking.deleteMany();
+  await prisma.boothItem.deleteMany(); // ✨ เพิ่มการลบ BoothItem
   await prisma.image.deleteMany();
   await prisma.booth.deleteMany();
-  await prisma.zone.deleteMany(); // เพิ่มการลบ Zone
+  await prisma.zone.deleteMany();
   await prisma.session.deleteMany();
   await prisma.account.deleteMany();
   await prisma.user.deleteMany();
@@ -55,7 +56,7 @@ async function main() {
 
   console.log(`✅ ${users.length + 1} Users created`);
 
-  // 3. Create Zones (สร้างข้อมูล Zone ตาม Schema ใหม่)
+  // 3. Create Zones
   const zoneData = [
     { name: "A", desc: "โซนอาหารและเครื่องดื่ม", color: "#FF5733" },
     { name: "B", desc: "โซนเสื้อผ้าแฟชั่น", color: "#33FF57" },
@@ -72,13 +73,12 @@ async function main() {
         color_code: zoneData[i]?.color,
       },
     });
-    // เก็บ index ไว้คำนวณพิกัด 3D
     zones.push({ ...zone, zoneIndex: i, rawName: zoneData[i]?.name }); 
   }
 
   console.log(`✅ ${zones.length} Zones created`);
 
-  // 4. Create Booths across ZONES พร้อมพิกัด 3D และผูก zone_id
+  // 4. Create Booths พร้อมพิกัด 3D
   const booths = [];
 
   for (const zone of zones) {
@@ -101,13 +101,13 @@ async function main() {
           longitude: 100.501 + Math.random() * 0.01,
           
           model_url: isEven ? "/models/booth-large.glb" : "/models/booth-small.glb",
-          position_x: posX, // แก้ไขตรงนี้ให้ตรงกับ Schema
+          position_x: posX,
           position_y: posY,
           position_z: posZ,
           rotation_y: rotY,
           scale: 1.0,
 
-          zone_id: zone.id, // ผูก Relation กับ Zone
+          zone_id: zone.id,
           user_id: admin.id,
         },
       });
@@ -117,7 +117,53 @@ async function main() {
 
   console.log(`✅ ${booths.length} Booths created with 3D Coordinates`);
 
-  // 5. Create Bookings (Mixed statuses and dates)
+  // ✨ 5. Create Booth Items (จำลองการจัดของในบูธ)
+  const boothItemsData = [];
+  for (const booth of booths) {
+    // วางโต๊ะตรงกลางบูธ
+    boothItemsData.push({
+      booth_id: booth.id,
+      item_type: "table",
+      color: "#ffffff",
+      position_x: 0,
+      position_y: 0,
+      position_z: 0,
+      rotation_y: 0,
+    });
+
+    // วางเก้าอี้ตัวที่ 1 (ด้านหน้าโต๊ะ หันหน้าเข้าโต๊ะ)
+    boothItemsData.push({
+      booth_id: booth.id,
+      item_type: "chair",
+      color: "#ff0000", // เก้าอี้สีแดง
+      position_x: 0,
+      position_y: 0,
+      position_z: 1.2, // ขยับมาด้านหน้าแกน Z
+      rotation_y: Math.PI, // หมุน 180 องศาหันเข้าโต๊ะ
+    });
+
+    // วางราวแขวนเสื้อ (ถ้าเป็นบูธใหญ่ 3x3)
+    if (booth.dimension === "3x3 m") {
+      boothItemsData.push({
+        booth_id: booth.id,
+        item_type: "rack",
+        color: "#333333",
+        position_x: -1.5, // วางชิดซ้าย
+        position_y: 0,
+        position_z: -1,   // ค่อนไปทางด้านหลัง
+        rotation_y: Math.PI / 2, // หมุนขวาง 90 องศา
+      });
+    }
+  }
+
+  // ใช้ createMany เพื่อ Insert ทีเดียวรวด (PostgreSQL รองรับ)
+  await prisma.boothItem.createMany({
+    data: boothItemsData,
+  });
+
+  console.log(`✅ ${boothItemsData.length} Booth Items created`);
+
+  // 6. Create Bookings (Mixed statuses and dates)
   const bookingData = [];
   const now = new Date();
   
@@ -165,7 +211,7 @@ async function main() {
 
   console.log(`✅ ${bookingData.length} Bookings created`);
 
-  // 6. Create Reviews
+  // 7. Create Reviews
   const reviewCreators = [
     { rating: 5.0, comment: "ทำเลดีมาก คนเดินผ่านเยอะจริงๆ", type: ReviewType.BOOTH },
     { rating: 4.5, comment: "จัดงานดีมาก ตลาดสะอาดครับ", type: ReviewType.MARKET },
@@ -184,7 +230,6 @@ async function main() {
         comment: review.comment,
         type: review.type,
         user_id: randomUser.id,
-        // ถ้าเป็นประเภท MARKET ไม่จำเป็นต้องส่ง booth_id ไปแล้วตาม Schema ใหม่
         ...(review.type === ReviewType.BOOTH ? { booth_id: randomBooth.id } : {}),
       },
     });

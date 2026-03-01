@@ -3,6 +3,42 @@
 import { db } from "@/server/db";
 import { revalidatePath } from "next/cache";
 
+interface RawBoothItem {
+  id: string;
+  type: string;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  color?: string;
+}
+
+function parseBoothItems(raw: string): RawBoothItem[] {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as RawBoothItem[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function saveBoothItems(boothId: string, items: RawBoothItem[]) {
+  // Replace all items for this booth atomically
+  await db.boothItem.deleteMany({ where: { booth_id: boothId } });
+  if (items.length === 0) return;
+  await db.boothItem.createMany({
+    data: items.map((item) => ({
+      booth_id: boothId,
+      item_type: item.type,
+      color: item.color ?? null,
+      position_x: item.position[0],
+      position_y: item.position[1],
+      position_z: item.position[2],
+      rotation_x: item.rotation[0],
+      rotation_y: item.rotation[1],
+      rotation_z: item.rotation[2],
+    })),
+  });
+}
+
 export async function getBooths(params?: { q?: string; status?: string }) {
   const query = params?.q || "";
   const statusFilter = params?.status || "all";
@@ -51,12 +87,13 @@ export async function createBoothAction(formData: FormData) {
     const rotation_z = parseFloat(formData.get("rotation_z") as string) || 0;
     const scale = parseFloat(formData.get("scale") as string) || 1;
     const model_url = (formData.get("model_url") as string) || null;
+    const boothItemsRaw = (formData.get("booth_items") as string) || "[]";
 
     if (!name || isNaN(price) || !user_id || !dimension) {
       return { success: false, error: "กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง" };
     }
 
-    await db.booth.create({
+    const booth = await db.booth.create({
       data: {
         name,
         price,
@@ -76,6 +113,8 @@ export async function createBoothAction(formData: FormData) {
         model_url,
       },
     });
+
+    await saveBoothItems(booth.id, parseBoothItems(boothItemsRaw));
 
     revalidatePath("/admin/booths");
     return { success: true };
@@ -108,6 +147,7 @@ export async function updateBoothAction(id: string, formData: FormData) {
     const rotation_z = parseFloat(formData.get("rotation_z") as string) || 0;
     const scale = parseFloat(formData.get("scale") as string) || 1;
     const model_url = (formData.get("model_url") as string) || null;
+    const boothItemsRaw = (formData.get("booth_items") as string) || "[]";
 
     if (!name || isNaN(price) || !user_id || !dimension) {
       return { success: false, error: "กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง" };
@@ -134,6 +174,8 @@ export async function updateBoothAction(id: string, formData: FormData) {
         model_url,
       },
     });
+
+    await saveBoothItems(id, parseBoothItems(boothItemsRaw));
 
     revalidatePath("/admin/booths");
     return { success: true };

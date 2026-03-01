@@ -91,9 +91,10 @@ model Booth {
     scale      Float?  @default(1)
     model_url  String? // URL สำหรับไฟล์ (.glb, .gltf)
 
-    images   Image[]
-    bookings Booking[]
-    reviews  Review[]
+    images      Image[]
+    bookings    Booking[]
+    reviews     Review[]
+    booth_items BoothItem[]
 
     // โซนของบูธ (เช่น โซนอาหาร, โซนแฟชั่น)
     zone_id String? @db.Uuid
@@ -102,6 +103,27 @@ model Booth {
     // ผูกกับ User (Admin) คนที่สร้าง
     user_id String? @db.Uuid
     user    User?   @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+}
+
+model BoothItem {
+    id       String @id @default(uuid()) @db.Uuid
+    booth_id String @db.Uuid
+    booth    Booth  @relation(fields: [booth_id], references: [id], onDelete: Cascade)
+
+    item_type  String // "table" | "chair" | "rack" | "shelf" | "counter"
+    color      String? // hex color override
+
+    // ตำแหน่งและการหมุนของชิ้นนี้ภายในบูธ (Local Space)
+    position_x Float @default(0)
+    position_y Float @default(0)
+    position_z Float @default(0)
+
+    rotation_x Float @default(0)
+    rotation_y Float @default(0)
+    rotation_z Float @default(0)
 
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt

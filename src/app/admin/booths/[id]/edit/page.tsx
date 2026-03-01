@@ -13,6 +13,7 @@ export default async function EditBoothPage({
 
   const booth = await db.booth.findUnique({
     where: { id: boothId },
+    include: { booth_items: true },
   });
 
   if (!booth) {
@@ -59,6 +60,16 @@ export default async function EditBoothPage({
     rotation_z: booth.rotation_z,
     scale: booth.scale,
     model_url: booth.model_url,
+    // Serialize saved furniture items for the 3D Configurator
+    booth_items: JSON.stringify(
+      booth.booth_items.map((item) => ({
+        id: item.id,
+        type: item.item_type,
+        color: item.color,
+        position: [item.position_x, item.position_y, item.position_z],
+        rotation: [item.rotation_x, item.rotation_y, item.rotation_z],
+      }))
+    ),
   };
 
   return (
