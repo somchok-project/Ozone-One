@@ -74,20 +74,45 @@ model Booth {
     id           String  @id @default(uuid()) @db.Uuid
     name         String
     price        Float
-    is_available Boolean @default(true)
+    is_available Boolean @default(true) // Active/Inactive status for rental
     dimension    String
 
-    // พิกัดสำหรับแสดงบนแผนที่ตลาด
+    // พิกัดสำหรับแสดงบนแผนที่ตลาด 2D
     latitude  Decimal? @db.Decimal(10, 8)
     longitude Decimal? @db.Decimal(11, 8)
+
+    // ข้อมูลสำหรับ 3D Visualization
+    x          Float?  @default(0)
+    y          Float?  @default(0)
+    z          Float?  @default(0)
+    rotation_x Float?  @default(0)
+    rotation_y Float?  @default(0)
+    rotation_z Float?  @default(0)
+    model_url  String? // URL สำหรับไฟล์ (.glb, .gltf)
 
     images   Image[]
     bookings Booking[]
     reviews  Review[]
 
+    // โซนของบูธ (เช่น โซนอาหาร, โซนแฟชั่น)
+    zone_id String? @db.Uuid
+    zone    Zone?   @relation(fields: [zone_id], references: [id], onDelete: SetNull)
+
     // ผูกกับ User (Admin) คนที่สร้าง
     user_id String? @db.Uuid
     user    User?   @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+}
+
+model Zone {
+    id          String  @id @default(uuid()) @db.Uuid
+    name        String
+    description String?
+    color_code  String? // สำหรับแยกสีตามโซนในแผนที่
+
+    booths Booth[]
 
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt
@@ -146,7 +171,7 @@ model Review {
     user_id String @db.Uuid
     user    User   @relation(fields: [user_id], references: [id])
 
-    // ทุกรีวิวควรอ้างอิง Booth ที่ผู้เช่าเคยใช้งาน (เพื่อ Verify ว่ามาจริง)
-    booth_id String @db.Uuid
-    booth    Booth  @relation(fields: [booth_id], references: [id])
+    // อ้างอิง Booth (Optional เพื่อให้ Customer ทั่วไปรีวิวภาพรวมตลาดได้)
+    booth_id String? @db.Uuid
+    booth    Booth?  @relation(fields: [booth_id], references: [id])
 }
