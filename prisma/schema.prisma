@@ -82,12 +82,13 @@ model Booth {
     longitude Decimal? @db.Decimal(11, 8)
 
     // ข้อมูลสำหรับ 3D Visualization
-    x          Float?  @default(0)
-    y          Float?  @default(0)
-    z          Float?  @default(0)
+    position_x Float?  @default(0)
+    position_y Float?  @default(0)
+    position_z Float?  @default(0)
     rotation_x Float?  @default(0)
     rotation_y Float?  @default(0)
     rotation_z Float?  @default(0)
+    scale      Float?  @default(1)
     model_url  String? // URL สำหรับไฟล์ (.glb, .gltf)
 
     images   Image[]

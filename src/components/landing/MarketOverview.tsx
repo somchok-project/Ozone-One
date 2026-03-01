@@ -1,7 +1,25 @@
 import { MapPin, User, Star, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
+import { api } from "@/trpc/server";
 
-export default function MarketOverview() {
+export default async function MarketOverview() {
+  let stats = {
+    totalBooths: 400,
+    avgRating: 4.8,
+    totalBookings: 1000,
+  };
+
+  try {
+    stats = await api.booth.getStats();
+  } catch (error) {
+    console.error("Failed to fetch market stats:", error);
+  }
+
+  // Calculate some derived stats for better appearance if needed
+  // Weekly visitors could be estimated based on bookings or just a larger fixed number if not tracked
+  const weeklyVisitors =
+    stats.totalBookings > 0 ? stats.totalBookings * 5 : "10k+";
+
   return (
     <section id="overview" className="bg-white py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -28,8 +46,8 @@ export default function MarketOverview() {
               <div className="mb-4 inline-flex items-center justify-center rounded-full bg-orange-100 p-3 text-orange-600">
                 <MapPin size={24} />
               </div>
-              <h3 className="text-5xl text-orange-600 font-bold tracking-wide ">
-                400+
+              <h3 className="text-5xl font-bold tracking-wide text-orange-600">
+                {stats.totalBooths}+
               </h3>
               <p className="mt-2 text-sm font-medium tracking-wide text-gray-400 uppercase">
                 ล็อคและร้านค้า
@@ -71,8 +89,10 @@ export default function MarketOverview() {
           <div className="group relative flex flex-col justify-center overflow-hidden rounded-3xl bg-orange-50 p-8 transition-all hover:bg-orange-100/80 md:col-span-1 md:row-span-1">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className=" text-4xl font-bold text-gray-900">
-                  10k+
+                <h3 className="text-4xl font-bold text-gray-900">
+                  {typeof weeklyVisitors === "number"
+                    ? `${(weeklyVisitors / 1000).toFixed(1)}k+`
+                    : weeklyVisitors}
                 </h3>
                 <p className="mt-1 text-sm font-medium text-orange-800/70">
                   ผู้เดินตลาดต่อสัปดาห์
@@ -99,8 +119,9 @@ export default function MarketOverview() {
                   คะแนนรีวิวจากผู้ค้า
                 </span>
               </div>
-              <h3 className="mt-2  text-4xl font-bold">
-                4.8<span className="text-2xl text-gray-500">/5</span>
+              <h3 className="mt-2 text-4xl font-bold">
+                {stats.avgRating.toFixed(1)}
+                <span className="text-2xl text-gray-500">/5</span>
               </h3>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-400 transition-colors group-hover:text-white">
