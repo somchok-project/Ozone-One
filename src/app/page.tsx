@@ -7,7 +7,11 @@ import {
 } from "@/components/landing";
 import { Reveal } from "@/components/ui/Reveal";
 
-export default function Home() {
+export default function Home({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   return (
     <div className="min-h-screen bg-stone-50 font-sans text-gray-800">
       <Navbar />
@@ -18,7 +22,7 @@ export default function Home() {
         <MarketOverview />
       </Reveal>
       <Reveal width="100%" className="block" delay={0.1}>
-        <FeaturedBooths />
+        <FeaturedBooths searchParams={searchParams as any} />
       </Reveal>
       <Footer />
     </div>

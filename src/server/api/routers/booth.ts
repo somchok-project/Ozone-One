@@ -2,17 +2,36 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 
 export const boothRouter = createTRPCRouter({
-  getAll: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.booth.findMany({
-      where: { is_available: true },
-      include: {
-        images: true,
-        reviews: {
-          include: { user: { select: { name: true, image: true } } },
+  getAll: publicProcedure
+    .input(z.object({ zoneId: z.string().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      return ctx.db.booth.findMany({
+        where: {
+          is_available: true,
+          ...(input?.zoneId && input.zoneId !== "all"
+            ? { zone_id: input.zoneId }
+            : {}),
         },
-        _count: { select: { bookings: true, reviews: true } },
+        include: {
+          images: true,
+          zone: true,
+          reviews: {
+            include: { user: { select: { name: true, image: true } } },
+          },
+          _count: { select: { bookings: true, reviews: true } },
+        },
+        orderBy: { created_at: "desc" },
+      });
+    }),
+
+  getZones: publicProcedure.query(async ({ ctx }) => {
+    return ctx.db.zone.findMany({
+      select: {
+        id: true,
+        name: true,
+        color_code: true,
       },
-      orderBy: { created_at: "desc" },
+      orderBy: { name: "asc" },
     });
   }),
 
@@ -51,7 +70,7 @@ export const boothRouter = createTRPCRouter({
 
     return {
       totalBooths,
-      avgRating: avgRating._avg.rating?.toNumber() || 0,
+      avgRating: avgRating._avg.rating?.toNumber() ?? 0,
       totalBookings,
     };
   }),
