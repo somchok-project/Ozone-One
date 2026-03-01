@@ -28,31 +28,8 @@ export default async function AddBoothPage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
-      <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-        {/* Breadcrumb - Minimal Style */}
-        <nav className="mb-8 flex items-center gap-2 text-xs font-bold tracking-widest text-slate-400 uppercase">
-          <Link
-            href="/admin/booths"
-            className="transition-colors hover:text-orange-500"
-          >
-            Inventory
-          </Link>
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-slate-900">Add New Booth</span>
-        </nav>
-
-        <header className="mb-10">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-200">
-            <Store className="h-6 w-6" />
-          </div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">
-            เพิ่มบูธใหม่
-          </h1>
-          <p className="mt-2 text-slate-500">
-            กรอกข้อมูลรายละเอียดบูธเพื่อเปิดให้ลูกค้าทำการจอง
-          </p>
-        </header>
-
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+  
         <BoothForm admins={adminOptions} zones={zoneOptions} />
       </div>
     </div>

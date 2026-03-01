@@ -15,8 +15,8 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Ozone One Market — Songprapha, Don Mueang, Bangkok
-const OZONE_CENTER: [number, number] = [13.929726, 100.576658];
+// Ozone One Market — ตลาดโอโซนวัน, ดอนเมือง, กรุงเทพฯ
+const OZONE_CENTER: [number, number] = [13.834329692653869, 100.47686786137426];
 
 interface MapPickerProps {
   lat: string;
@@ -58,7 +58,7 @@ export default function MapPicker({ lat, lng, onChange }: MapPickerProps) {
         minZoom={15}
         maxZoom={20}
         scrollWheelZoom
-        className="h-full w-full"
+        className="h-full w-full z-10"
         style={{ height: "100%", minHeight: "300px" }}
       >
         <TileLayer

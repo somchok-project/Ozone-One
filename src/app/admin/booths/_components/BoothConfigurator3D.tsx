@@ -6,20 +6,20 @@ import {
   Grid,
   OrbitControls,
   TransformControls,
-  Environment,
   ContactShadows,
   Html,
 } from "@react-three/drei";
 import * as THREE from "three";
 import {
-  Plus,
   Trash2,
   RotateCw,
   Move,
   Copy,
-  Save,
-  ChevronDown,
-  PackageOpen,
+  MousePointer2,
+  List,
+  X,
+  Eye,
+  Store,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -35,24 +35,24 @@ export interface BoothItem {
 }
 
 interface BoothConfigurator3DProps {
-  /** Called whenever the items list changes */
   onChange?: (items: BoothItem[]) => void;
-  /** Initial items to load */
   initialItems?: BoothItem[];
-  /** Name of the hidden <input> that stores the JSON (for form submission) */
   inputName?: string;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const FLOOR_Y = 0;
+// ความสูงของพื้นบูธ
+const BOOTH_FLOOR_Y = 0.04; 
+// ขนาดขอบเขตบูธ (บูธขนาด 3x3 เมตร -> กว้าง 1.5 จากจุดศูนย์กลาง)
+const BOOTH_BOUNDS = 1.25; 
 
 const ITEM_FLOOR_OFFSET: Record<ItemType, number> = {
-  table: 0.37,
-  chair: 0.25,
-  rack: 0.8,
-  shelf: 0.5,
-  counter: 0.45,
+  table: BOOTH_FLOOR_Y + 0.35,
+  chair: BOOTH_FLOOR_Y + 0.25,
+  rack: BOOTH_FLOOR_Y + 0.8,
+  shelf: BOOTH_FLOOR_Y + 0.5,
+  counter: BOOTH_FLOOR_Y + 0.45,
 };
 
 const ITEM_COLORS: Record<ItemType, string> = {
@@ -71,32 +71,71 @@ const ITEM_LABELS: Record<ItemType, string> = {
   counter: "เคาน์เตอร์",
 };
 
-// ─── Furniture geometry components ───────────────────────────────────────────
+const ITEM_ICONS: Record<ItemType, string> = {
+  table: "🪵",
+  chair: "🪑",
+  rack: "👔",
+  shelf: "📚",
+  counter: "🏪",
+};
 
-function TableMesh({
-  selected,
-  color,
-}: {
-  selected: boolean;
-  color: string;
-}) {
+// ─── Booth Default Structure ─────────────────────────────────────────────────
+
+function BoothStructure({ onDeselect }: { onDeselect: () => void }) {
+  return (
+    <group position={[0, 0, 0]} onClick={(e) => { e.stopPropagation(); onDeselect(); }}>
+      {/* พื้นบูธ (Floor Pad) */}
+      <mesh position={[0, BOOTH_FLOOR_Y / 2, 0]} receiveShadow>
+        <boxGeometry args={[3, BOOTH_FLOOR_Y, 3]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.9} />
+      </mesh>
+      
+      {/* ผนังด้านหลัง (Back Wall) */}
+      <mesh position={[0, 0.6 + BOOTH_FLOOR_Y, -1.45]} receiveShadow castShadow>
+        <boxGeometry args={[3, 1.2, 0.1]} />
+        <meshStandardMaterial color="#e2e8f0" roughness={0.9} />
+      </mesh>
+      
+      {/* ผนังด้านซ้าย (Left Wall) */}
+      <mesh position={[-1.45, 0.4 + BOOTH_FLOOR_Y, 0]} receiveShadow castShadow>
+        <boxGeometry args={[0.1, 0.8, 3]} />
+        <meshStandardMaterial color="#e2e8f0" roughness={0.9} />
+      </mesh>
+      
+      {/* ผนังด้านขวา (Right Wall) */}
+      <mesh position={[1.45, 0.4 + BOOTH_FLOOR_Y, 0]} receiveShadow castShadow>
+        <boxGeometry args={[0.1, 0.8, 3]} />
+        <meshStandardMaterial color="#e2e8f0" roughness={0.9} />
+      </mesh>
+
+      {/* พรมบอกทางเข้า (Entrance Indicator) */}
+      <mesh position={[0, BOOTH_FLOOR_Y + 0.005, 1.2]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[1.5, 0.4]} />
+        <meshBasicMaterial color="#f97316" transparent opacity={0.3} />
+      </mesh>
+      {/* Text Label "ทางเข้า" in 3D using Html */}
+      <Html position={[0, BOOTH_FLOOR_Y + 0.01, 1.2]} rotation={[-Math.PI / 2, 0, 0]} transform pointerEvents="none">
+        <div className="text-[8px] font-bold text-orange-800 uppercase tracking-widest opacity-60">
+          FRONT / ทางเข้า
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+// ─── Furniture Geometry Components ───────────────────────────────────────────
+// (ลดความซับซ้อนโค้ดรูปทรง)
+function TableMesh({ selected, color }: { selected: boolean; color: string }) {
   const mat = selected ? "#f97316" : color;
   return (
     <group>
-      {/* Tabletop */}
-      <mesh position={[0, 0.35, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.9, 0.06, 0.5]} />
+      <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.2, 0.05, 0.6]} />
         <meshStandardMaterial color={mat} roughness={0.4} metalness={0.1} />
       </mesh>
-      {/* Legs */}
-      {[
-        [-0.38, 0, -0.2],
-        [0.38, 0, -0.2],
-        [-0.38, 0, 0.2],
-        [0.38, 0, 0.2],
-      ].map(([x, , z], i) => (
-        <mesh key={i} position={[x as number, 0.17, z as number]} castShadow>
-          <cylinderGeometry args={[0.025, 0.025, 0.34, 8]} />
+      {[[-0.5, -0.25], [0.5, -0.25], [-0.5, 0.25], [0.5, 0.25]].map(([x, z], i) => (
+        <mesh key={i} position={[x, -0.175, z]} castShadow>
+          <cylinderGeometry args={[0.025, 0.025, 0.35, 8]} />
           <meshStandardMaterial color={mat} roughness={0.5} />
         </mesh>
       ))}
@@ -104,35 +143,21 @@ function TableMesh({
   );
 }
 
-function ChairMesh({
-  selected,
-  color,
-}: {
-  selected: boolean;
-  color: string;
-}) {
+function ChairMesh({ selected, color }: { selected: boolean; color: string }) {
   const mat = selected ? "#f97316" : color;
   return (
     <group>
-      {/* Seat */}
-      <mesh position={[0, 0.24, 0]} castShadow receiveShadow>
+      <mesh position={[0, 0, 0]} castShadow receiveShadow>
         <boxGeometry args={[0.4, 0.05, 0.4]} />
         <meshStandardMaterial color={mat} roughness={0.6} />
       </mesh>
-      {/* Back */}
-      <mesh position={[0, 0.44, 0.175]} castShadow>
+      <mesh position={[0, 0.2, 0.175]} castShadow>
         <boxGeometry args={[0.4, 0.4, 0.05]} />
         <meshStandardMaterial color={mat} roughness={0.6} />
       </mesh>
-      {/* Legs */}
-      {[
-        [-0.16, -0.16],
-        [0.16, -0.16],
-        [-0.16, 0.16],
-        [0.16, 0.16],
-      ].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0.12, z]} castShadow>
-          <cylinderGeometry args={[0.02, 0.02, 0.24, 8]} />
+      {[[-0.16, -0.16], [0.16, -0.16], [-0.16, 0.16], [0.16, 0.16]].map(([x, z], i) => (
+        <mesh key={i} position={[x, -0.125, z]} castShadow>
+          <cylinderGeometry args={[0.02, 0.02, 0.25, 8]} />
           <meshStandardMaterial color={mat} roughness={0.5} />
         </mesh>
       ))}
@@ -140,68 +165,43 @@ function ChairMesh({
   );
 }
 
-function RackMesh({
-  selected,
-  color,
-}: {
-  selected: boolean;
-  color: string;
-}) {
+function RackMesh({ selected, color }: { selected: boolean; color: string }) {
   const mat = selected ? "#f97316" : color;
   return (
     <group>
-      {/* Horizontal bar */}
-      <mesh position={[0, 1.55, 0]} castShadow>
-        <cylinderGeometry args={[0.02, 0.02, 1.0, 12]} rotation={[0, 0, Math.PI / 2]} />
+      <mesh position={[0, 0.75, 0]} castShadow>
+        <cylinderGeometry args={[0.02, 0.02, 1.2, 12]} rotation={[0, 0, Math.PI / 2]} />
         <meshStandardMaterial color={mat} metalness={0.6} roughness={0.3} />
       </mesh>
-      {/* Left support */}
-      <mesh position={[-0.48, 0.8, 0]} castShadow>
-        <cylinderGeometry args={[0.02, 0.02, 1.6, 12]} />
+      <mesh position={[-0.55, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.02, 0.02, 1.5, 12]} />
         <meshStandardMaterial color={mat} metalness={0.6} roughness={0.3} />
       </mesh>
-      {/* Right support */}
-      <mesh position={[0.48, 0.8, 0]} castShadow>
-        <cylinderGeometry args={[0.02, 0.02, 1.6, 12]} />
+      <mesh position={[0.55, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.02, 0.02, 1.5, 12]} />
         <meshStandardMaterial color={mat} metalness={0.6} roughness={0.3} />
       </mesh>
-      {/* Base cross bars */}
-      <mesh position={[0, 0.03, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.0, 0.04, 0.3]} />
+      <mesh position={[0, -0.75, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.2, 0.04, 0.4]} />
         <meshStandardMaterial color={mat} metalness={0.5} roughness={0.4} />
       </mesh>
-      {/* Hangers (decorative) */}
-      {[-0.3, -0.1, 0.1, 0.3].map((x, i) => (
-        <mesh key={i} position={[x, 1.5, 0.08]}>
-          <torusGeometry args={[0.05, 0.008, 8, 16, Math.PI]} />
-          <meshStandardMaterial color="#9ca3af" metalness={0.8} roughness={0.2} />
-        </mesh>
-      ))}
     </group>
   );
 }
 
-function ShelfMesh({
-  selected,
-  color,
-}: {
-  selected: boolean;
-  color: string;
-}) {
+function ShelfMesh({ selected, color }: { selected: boolean; color: string }) {
   const mat = selected ? "#f97316" : color;
   return (
     <group>
-      {/* Shelves */}
-      {[0, 0.44, 0.88].map((y, i) => (
-        <mesh key={i} position={[0, y + 0.02, 0]} castShadow receiveShadow>
+      {[-0.4, 0, 0.4].map((y, i) => (
+        <mesh key={i} position={[0, y, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.8, 0.04, 0.3]} />
           <meshStandardMaterial color={mat} roughness={0.5} />
         </mesh>
       ))}
-      {/* Side panels */}
       {[-0.38, 0.38].map((x, i) => (
-        <mesh key={i} position={[x, 0.5, 0]} castShadow>
-          <boxGeometry args={[0.04, 1.04, 0.3]} />
+        <mesh key={i} position={[x, 0, 0]} castShadow>
+          <boxGeometry args={[0.04, 1.0, 0.3]} />
           <meshStandardMaterial color={mat} roughness={0.5} />
         </mesh>
       ))}
@@ -209,54 +209,33 @@ function ShelfMesh({
   );
 }
 
-function CounterMesh({
-  selected,
-  color,
-}: {
-  selected: boolean;
-  color: string;
-}) {
+function CounterMesh({ selected, color }: { selected: boolean; color: string }) {
   const mat = selected ? "#f97316" : color;
   return (
     <group>
-      {/* Main body */}
-      <mesh position={[0, 0.42, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.0, 0.84, 0.5]} />
+      <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.2, 0.8, 0.5]} />
         <meshStandardMaterial color={mat} roughness={0.4} />
       </mesh>
-      {/* Top slab */}
-      <mesh position={[0, 0.87, 0]} castShadow>
-        <boxGeometry args={[1.05, 0.06, 0.55]} />
+      <mesh position={[0, 0.42, 0]} castShadow>
+        <boxGeometry args={[1.25, 0.06, 0.55]} />
         <meshStandardMaterial color="#f1f5f9" roughness={0.3} metalness={0.1} />
       </mesh>
     </group>
   );
 }
 
-function FurnitureMesh({
-  type,
-  selected,
-  color,
-}: {
-  type: ItemType;
-  selected: boolean;
-  color: string;
-}) {
+function FurnitureMesh({ type, selected, color }: { type: ItemType; selected: boolean; color: string }) {
   switch (type) {
-    case "table":
-      return <TableMesh selected={selected} color={color} />;
-    case "chair":
-      return <ChairMesh selected={selected} color={color} />;
-    case "rack":
-      return <RackMesh selected={selected} color={color} />;
-    case "shelf":
-      return <ShelfMesh selected={selected} color={color} />;
-    case "counter":
-      return <CounterMesh selected={selected} color={color} />;
+    case "table": return <TableMesh selected={selected} color={color} />;
+    case "chair": return <ChairMesh selected={selected} color={color} />;
+    case "rack": return <RackMesh selected={selected} color={color} />;
+    case "shelf": return <ShelfMesh selected={selected} color={color} />;
+    case "counter": return <CounterMesh selected={selected} color={color} />;
   }
 }
 
-// ─── Single draggable item ────────────────────────────────────────────────────
+// ─── Interactive Draggable Item ───────────────────────────────────────────────
 
 function FurnitureItem({
   item,
@@ -264,23 +243,20 @@ function FurnitureItem({
   transformMode,
   orbitEnabled,
   onSelect,
-  onDeselect,
   onTransform,
 }: {
   item: BoothItem;
   isSelected: boolean;
-  transformMode: "translate" | "rotate";
+  transformMode: "translate" | "rotate" | "none";
   orbitEnabled: React.MutableRefObject<boolean>;
   onSelect: (id: string) => void;
-  onDeselect: () => void;
   onTransform: (id: string, position: [number, number, number], rotation: [number, number, number]) => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const [mounted, setMounted] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   const floorY = ITEM_FLOOR_OFFSET[item.type];
 
@@ -288,16 +264,18 @@ function FurnitureItem({
     if (!groupRef.current) return;
     const p = groupRef.current.position;
     const r = groupRef.current.rotation;
-    // Clamp to floor and within booth bounds (~2.5m each side)
+    
+    // Clamp ให้อยู่ในกรอบบูธ (ไม่ให้ทะลุผนัง) และไม่จมดิน
     p.y = floorY;
-    p.x = Math.max(-2.4, Math.min(2.4, p.x));
-    p.z = Math.max(-2.4, Math.min(2.4, p.z));
-    onTransform(
-      item.id,
-      [p.x, p.y, p.z],
-      [r.x, r.y, r.z],
-    );
+    p.x = Math.max(-BOOTH_BOUNDS, Math.min(BOOTH_BOUNDS, p.x));
+    p.z = Math.max(-BOOTH_BOUNDS, Math.min(BOOTH_BOUNDS, p.z));
+    
+    onTransform(item.id, [p.x, p.y, p.z], [r.x, r.y, r.z]);
   }, [item.id, floorY, onTransform]);
+
+  const showX = transformMode === "translate";
+  const showZ = transformMode === "translate";
+  const showY = transformMode === "rotate"; 
 
   return (
     <>
@@ -309,37 +287,31 @@ function FurnitureItem({
           e.stopPropagation();
           onSelect(item.id);
         }}
+        onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = "pointer"; }}
+        onPointerOut={() => { setHovered(false); document.body.style.cursor = "auto"; }}
       >
         <FurnitureMesh
           type={item.type}
-          selected={isSelected}
+          selected={isSelected || hovered}
           color={item.color ?? ITEM_COLORS[item.type]}
         />
-        {/* Invisible hitbox */}
+        
+        {/* กล่อง Hitbox ที่ใหญ่กว่าตัวโมเดลนิดหน่อย เพื่อให้คลิกง่าย */}
         <mesh visible={false}>
-          <boxGeometry args={[1.1, 1.8, 0.6]} />
+          <boxGeometry args={[1.4, 1.4, 1.0]} />
         </mesh>
-        {/* Selection ring */}
-        {isSelected && (
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-            <ringGeometry args={[0.65, 0.72, 32]} />
-            <meshBasicMaterial color="#f97316" transparent opacity={0.6} />
-          </mesh>
-        )}
       </group>
 
-      {/* TransformControls — attached after mesh mounts */}
-      {isSelected && mounted && groupRef.current && (
+      {isSelected && mounted && groupRef.current && transformMode !== "none" && (
         <TransformControls
           object={groupRef.current}
           mode={transformMode}
-          showY={false} // Lock Y movement in translate
-          onMouseDown={() => {
-            orbitEnabled.current = false;
-          }}
-          onMouseUp={() => {
-            orbitEnabled.current = true;
-          }}
+          showX={showX}
+          showZ={showZ}
+          showY={showY}
+          size={0.9}
+          onMouseDown={() => { orbitEnabled.current = false; }}
+          onMouseUp={() => { orbitEnabled.current = true; }}
           onObjectChange={handleObjectChange}
         />
       )}
@@ -347,7 +319,7 @@ function FurnitureItem({
   );
 }
 
-// ─── Scene (inside Canvas) ───────────────────────────────────────────────────
+// ─── 3D Scene Container ──────────────────────────────────────────────────────
 
 function Scene({
   items,
@@ -358,84 +330,57 @@ function Scene({
 }: {
   items: BoothItem[];
   selectedId: string | null;
-  transformMode: "translate" | "rotate";
+  transformMode: "translate" | "rotate" | "none";
   setSelectedId: (id: string | null) => void;
   onTransform: (id: string, p: [number, number, number], r: [number, number, number]) => void;
 }) {
   const orbitRef = useRef<any>(null);
   const orbitEnabled = useRef(true);
 
-  // Sync orbit enable state each frame
+  // Sync orbit controls state
   useEffect(() => {
     const frame = setInterval(() => {
-      if (orbitRef.current) {
-        orbitRef.current.enabled = orbitEnabled.current;
-      }
+      if (orbitRef.current) orbitRef.current.enabled = orbitEnabled.current;
     }, 10);
     return () => clearInterval(frame);
   }, []);
 
   return (
     <>
-      {/* Camera & Controls */}
       <OrbitControls
         ref={orbitRef}
         makeDefault
-        maxPolarAngle={Math.PI / 2.05}
-        minDistance={2}
-        maxDistance={14}
+        maxPolarAngle={Math.PI / 2.2} // กันกล้องมุดใต้ดิน
+        minDistance={3}
+        maxDistance={10}
+        dampingFactor={0.05}
       />
 
-      {/* Lighting */}
-      <ambientLight intensity={0.6} />
-      <directionalLight
-        position={[5, 8, 5]}
-        intensity={1.2}
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-      />
-      <directionalLight position={[-5, 4, -3]} intensity={0.4} />
+      <ambientLight intensity={0.7} />
+      <directionalLight position={[5, 10, 5]} intensity={1.0} castShadow shadow-mapSize={[1024, 1024]} />
+      <directionalLight position={[-5, 4, -3]} intensity={0.3} />
 
-      {/* Environment */}
-      <color attach="background" args={["#f8fafc"]} />
+      <color attach="background" args={["#f1f5f9"]} />
 
-      {/* Floor grid — 6x6 m booth area */}
+      {/* Grid Floor Global (จางๆ) */}
       <Grid
-        position={[0, FLOOR_Y, 0]}
-        args={[6, 6]}
-        cellSize={0.5}
-        cellThickness={0.6}
+        position={[0, 0, 0]}
+        args={[20, 20]}
+        cellSize={1}
+        cellThickness={0.5}
         cellColor="#e2e8f0"
-        sectionSize={1}
-        sectionThickness={1.2}
-        sectionColor="#94a3b8"
-        followCamera={false}
-        infiniteGrid={false}
-        fadeDistance={20}
+        sectionSize={3}
+        sectionThickness={1}
+        sectionColor="#cbd5e1"
+        fadeDistance={15}
+        infiniteGrid={true}
       />
 
-      {/* Booth boundary walls (subtle) */}
-      {/* Floor */}
-      <mesh
-        receiveShadow
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, FLOOR_Y - 0.002, 0]}
-        onClick={() => setSelectedId(null)}
-      >
-        <planeGeometry args={[6, 6]} />
-        <meshStandardMaterial color="#f1f5f9" roughness={1} />
-      </mesh>
+      {/* โครงสร้างบูธ Default */}
+      <BoothStructure onDeselect={() => setSelectedId(null)} />
 
-      {/* Contact shadows */}
-      <ContactShadows
-        position={[0, FLOOR_Y, 0]}
-        opacity={0.3}
-        scale={8}
-        blur={2}
-        far={4}
-      />
+      <ContactShadows position={[0, BOOTH_FLOOR_Y, 0]} opacity={0.3} scale={5} blur={2} far={2} />
 
-      {/* Furniture items */}
       {items.map((item) => (
         <FurnitureItem
           key={item.id}
@@ -444,56 +389,14 @@ function Scene({
           transformMode={transformMode}
           orbitEnabled={orbitEnabled}
           onSelect={setSelectedId}
-          onDeselect={() => setSelectedId(null)}
           onTransform={onTransform}
         />
       ))}
-
-      {/* Label for empty state */}
-      {items.length === 0 && (
-        <Html center position={[0, 0.5, 0]}>
-          <div className="pointer-events-none flex flex-col items-center gap-2 text-center">
-            <PackageOpen className="h-10 w-10 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-400">
-              เพิ่มเฟอร์นิเจอร์จากเมนูด้านล่าง
-            </p>
-          </div>
-        </Html>
-      )}
     </>
   );
 }
 
-// ─── Sidebar item button ──────────────────────────────────────────────────────
-
-function AddButton({
-  type,
-  onAdd,
-}: {
-  type: ItemType;
-  onAdd: (type: ItemType) => void;
-}) {
-  const icons: Record<ItemType, string> = {
-    table: "🪵",
-    chair: "🪑",
-    rack: "👔",
-    shelf: "📚",
-    counter: "🏪",
-  };
-  return (
-    <button
-      type="button"
-      onClick={() => onAdd(type)}
-      className="flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
-    >
-      <span className="text-base">{icons[type]}</span>
-      <span>{ITEM_LABELS[type]}</span>
-      <Plus className="ml-auto h-3.5 w-3.5 opacity-50" />
-    </button>
-  );
-}
-
-// ─── Main Component ──────────────────────────────────────────────────────────
+// ─── Main Component: Configurator UI ─────────────────────────────────────────
 
 let idCounter = 1;
 
@@ -504,19 +407,17 @@ export default function BoothConfigurator3D({
 }: BoothConfigurator3DProps) {
   const [items, setItems] = useState<BoothItem[]>(initialItems);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [transformMode, setTransformMode] = useState<"translate" | "rotate">(
-    "translate",
-  );
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "none">("translate");
+  const [showItemList, setShowItemList] = useState(false);
 
   const selectedItem = items.find((i) => i.id === selectedId);
 
-  // Add item in the center, slightly offset so items don't stack
+  // ─── Actions ───
   const addItem = useCallback(
     (type: ItemType) => {
       const offset = (idCounter % 3) * 0.4 - 0.4;
       const newItem: BoothItem = {
-        id: `item-${idCounter++}`,
+        id: `item-${Date.now()}-${idCounter++}`,
         type,
         position: [offset, ITEM_FLOOR_OFFSET[type], offset * 0.5],
         rotation: [0, 0, 0],
@@ -528,6 +429,7 @@ export default function BoothConfigurator3D({
         return next;
       });
       setSelectedId(newItem.id);
+      setTransformMode("translate"); 
     },
     [onChange],
   );
@@ -546,11 +448,11 @@ export default function BoothConfigurator3D({
     if (!selectedItem) return;
     const dup: BoothItem = {
       ...selectedItem,
-      id: `item-${idCounter++}`,
+      id: `item-${Date.now()}-${idCounter++}`,
       position: [
-        selectedItem.position[0] + 0.5,
+        Math.min(BOOTH_BOUNDS, selectedItem.position[0] + 0.5),
         selectedItem.position[1],
-        selectedItem.position[2] + 0.5,
+        Math.min(BOOTH_BOUNDS, selectedItem.position[2] + 0.5),
       ],
     };
     setItems((prev) => {
@@ -562,11 +464,7 @@ export default function BoothConfigurator3D({
   }, [selectedItem, onChange]);
 
   const handleTransform = useCallback(
-    (
-      id: string,
-      position: [number, number, number],
-      rotation: [number, number, number],
-    ) => {
+    (id: string, position: [number, number, number], rotation: [number, number, number]) => {
       setItems((prev) => {
         const next = prev.map((item) =>
           item.id === id ? { ...item, position, rotation } : item,
@@ -578,179 +476,193 @@ export default function BoothConfigurator3D({
     [onChange],
   );
 
-  const handleSaveLayout = useCallback(() => {
-    console.log("📦 Booth Layout:", JSON.stringify(items, null, 2));
-  }, [items]);
-
-  const jsonValue = JSON.stringify(items);
-
   return (
-    <div className="flex flex-col gap-0">
-      {/* Hidden input for form submission */}
-      <input type="hidden" name={inputName} value={jsonValue} />
+    <div className="relative flex h-[550px] w-full flex-col overflow-hidden rounded-[2rem] bg-slate-100 border border-slate-200">
+      <input type="hidden" name={inputName} value={JSON.stringify(items)} />
 
-      <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-slate-50 shadow-inner">
-        {/* 3D Canvas */}
-        <div className="h-[500px] w-full">
-          <Canvas
-            shadows
-            camera={{ position: [4, 5, 6], fov: 45 }}
-            gl={{ antialias: true }}
-          >
-            <Suspense fallback={null}>
-              <Scene
-                items={items}
-                selectedId={selectedId}
-                transformMode={transformMode}
-                setSelectedId={setSelectedId}
-                onTransform={handleTransform}
-              />
-            </Suspense>
-          </Canvas>
-        </div>
-
-        {/* Top-right mode toolbar */}
-        <div className="absolute right-3 top-3 flex flex-col gap-1.5 rounded-2xl bg-white/90 p-1.5 shadow-lg ring-1 ring-slate-200/60 backdrop-blur-sm">
-          <button
-            type="button"
-            title="ย้าย (Translate)"
-            onClick={() => setTransformMode("translate")}
-            className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
-              transformMode === "translate"
-                ? "bg-orange-500 text-white"
-                : "text-slate-500 hover:bg-slate-100"
-            }`}
-          >
-            <Move className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            title="หมุน (Rotate)"
-            onClick={() => setTransformMode("rotate")}
-            className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
-              transformMode === "rotate"
-                ? "bg-orange-500 text-white"
-                : "text-slate-500 hover:bg-slate-100"
-            }`}
-          >
-            <RotateCw className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Selected item actions */}
-        {selectedItem && (
-          <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-2xl bg-white/90 px-3 py-2 shadow-lg ring-1 ring-slate-200/60 backdrop-blur-sm">
-            <span className="mr-1 text-xs font-bold text-slate-600">
-              {ITEM_LABELS[selectedItem.type]}
-            </span>
-            <button
-              type="button"
-              title="ทำสำเนา"
-              onClick={duplicateSelected}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              title="ลบ"
-              onClick={removeSelected}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
+      {/* ─── 3D Canvas Layer ─── */}
+      <div className="absolute inset-0 z-0">
+        <Canvas shadows camera={{ position: [0, 4, 6], fov: 45 }} gl={{ antialias: true }}>
+          <Suspense fallback={null}>
+            <Scene
+              items={items}
+              selectedId={selectedId}
+              transformMode={transformMode}
+              setSelectedId={setSelectedId}
+              onTransform={handleTransform}
+            />
+          </Suspense>
+        </Canvas>
       </div>
 
-      {/* Bottom toolbar: Add items + Save */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {/* Add buttons */}
-        {(["table", "chair", "rack", "shelf", "counter"] as ItemType[]).map(
-          (type) => {
-            const icons: Record<ItemType, string> = {
-              table: "🪵",
-              chair: "🪑",
-              rack: "👔",
-              shelf: "📚",
-              counter: "🏪",
-            };
-            return (
+      {/* ─── UI Overlay Layer ─── */}
+      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-5">
+        
+        {/* Top Controls */}
+        <div className="flex items-start justify-between w-full">
+          
+          {/* Badge */}
+          <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 shadow-sm backdrop-blur-md">
+            <Store className="h-4 w-4 text-orange-500" />
+            <span className="text-xs font-bold text-slate-700">จำลองพื้นที่ 3x3 เมตร</span>
+          </div>
+
+          {/* Right Tools: View/Edit Modes */}
+          <div className="pointer-events-auto flex gap-2">
+            <div className="flex rounded-2xl bg-white/90 p-1 shadow-md backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => setTransformMode("none")}
+                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                  transformMode === "none" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                <MousePointer2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">หมุนกล้อง</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTransformMode("translate")}
+                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                  transformMode === "translate" ? "bg-orange-500 text-white" : "text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                <Move className="h-3.5 w-3.5" /> <span className="hidden sm:inline">ย้าย</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTransformMode("rotate")}
+                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                  transformMode === "rotate" ? "bg-orange-500 text-white" : "text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                <RotateCw className="h-3.5 w-3.5" /> <span className="hidden sm:inline">หมุน</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowItemList(!showItemList)}
+              className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/90 text-slate-600 shadow-md backdrop-blur-md hover:bg-slate-50"
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Context & Add Items (The Sims Style Dock) */}
+        <div className="flex flex-col items-center gap-4">
+          
+          {/* Selected Item Actions */}
+          <div className={`pointer-events-auto transition-all duration-300 ${selectedItem ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"}`}>
+            {selectedItem && (
+              <div className="flex items-center gap-3 rounded-full bg-slate-900/90 px-4 py-2 shadow-xl backdrop-blur-md">
+                <span className="text-xs font-bold text-white">
+                  {ITEM_ICONS[selectedItem.type]} {ITEM_LABELS[selectedItem.type]}
+                </span>
+                <div className="h-3 w-px bg-slate-600" />
+                <button
+                  type="button"
+                  onClick={duplicateSelected}
+                  className="flex items-center gap-1 text-xs font-medium text-slate-300 hover:text-white"
+                >
+                  <Copy className="h-3.5 w-3.5" /> ก๊อปปี้
+                </button>
+                <button
+                  type="button"
+                  onClick={removeSelected}
+                  className="flex items-center gap-1 text-xs font-medium text-red-400 hover:text-red-300"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> ลบ
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Dock: Add Items */}
+          <div className="pointer-events-auto flex max-w-full overflow-x-auto rounded-[2rem] bg-white/95 p-2 shadow-lg backdrop-blur-md ring-1 ring-slate-200/50 sm:overflow-visible">
+            {(["table", "chair", "rack", "shelf", "counter"] as ItemType[]).map((type) => (
               <button
                 key={type}
                 type="button"
                 onClick={() => addItem(type)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                className="group flex flex-col items-center gap-1 rounded-xl p-2 min-w-[64px] transition-colors hover:bg-orange-50"
               >
-                <span>{icons[type]}</span>
-                <span>+ {ITEM_LABELS[type]}</span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-xl shadow-inner transition-transform group-hover:scale-110 group-hover:bg-orange-100">
+                  {ITEM_ICONS[type]}
+                </span>
+                <span className="text-[10px] font-bold text-slate-500 group-hover:text-orange-600">
+                  {ITEM_LABELS[type]}
+                </span>
               </button>
-            );
-          },
-        )}
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Item count badge */}
-        {items.length > 0 && (
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">
-            {items.length} ชิ้น
-          </span>
-        )}
-
-        {/* Save / log layout */}
-        <button
-          type="button"
-          onClick={handleSaveLayout}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow hover:bg-slate-800 transition-colors"
-        >
-          <Save className="h-3.5 w-3.5" />
-          บันทึก Layout
-        </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Summary list */}
-      {items.length > 0 && (
-        <div className="mt-3 space-y-1">
-          {items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setSelectedId(item.id === selectedId ? null : item.id)}
-              className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs transition-colors ${
-                item.id === selectedId
-                  ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200"
-                  : "bg-slate-50 text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              <span
-                className="h-2.5 w-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: item.color ?? ITEM_COLORS[item.type] }}
-              />
-              <span className="font-semibold">{ITEM_LABELS[item.type]}</span>
-              <span className="text-slate-400">
-                x:{item.position[0].toFixed(2)} z:{item.position[2].toFixed(2)}
-              </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setItems((prev) => {
-                    const next = prev.filter((i) => i.id !== item.id);
-                    onChange?.(next);
-                    return next;
-                  });
-                  if (selectedId === item.id) setSelectedId(null);
-                }}
-                className="ml-auto flex h-5 w-5 items-center justify-center rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            </button>
-          ))}
+      {/* ─── Slide-over Item List Panel ─── */}
+      <div
+        className={`absolute right-0 top-0 z-20 h-full w-64 transform bg-white/95 p-5 shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-in-out ${
+          showItemList ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
+          <h3 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+            <List className="h-4 w-4 text-orange-500" /> ของตกแต่งในบูธ ({items.length})
+          </h3>
+          <button
+            type="button"
+            onClick={() => setShowItemList(false)}
+            className="rounded-lg bg-slate-50 p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-      )}
+
+        {items.length === 0 ? (
+          <div className="mt-10 text-center text-xs text-slate-400">ยังไม่มีเฟอร์นิเจอร์</div>
+        ) : (
+          <div className="flex h-[calc(100%-4rem)] flex-col gap-2 overflow-y-auto pr-2">
+            {items.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setSelectedId(item.id);
+                  setTransformMode("translate");
+                }}
+                className={`group flex items-center justify-between rounded-xl px-3 py-3 text-left text-xs transition-all ${
+                  item.id === selectedId
+                    ? "bg-orange-50 shadow-sm ring-1 ring-orange-200"
+                    : "bg-slate-50 hover:bg-slate-100"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-sm">{ITEM_ICONS[item.type]}</span>
+                  <span className={`font-semibold ${item.id === selectedId ? "text-orange-700" : "text-slate-600"}`}>
+                    {ITEM_LABELS[item.type]}
+                  </span>
+                </div>
+                
+                {item.id === selectedId ? (
+                  <Eye className="h-4 w-4 text-orange-400" />
+                ) : (
+                  <Trash2 
+                    className="h-4 w-4 text-slate-300 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setItems((prev) => {
+                        const next = prev.filter((i) => i.id !== item.id);
+                        onChange?.(next);
+                        return next;
+                      });
+                    }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
