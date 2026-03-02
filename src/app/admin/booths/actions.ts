@@ -44,11 +44,18 @@ export async function getBooths(params?: { q?: string; status?: string }) {
   const statusFilter = params?.status || "all";
   const now = new Date();
 
-  // Active bookings = CONFIRMED or PENDING booking that covers today
   const activeStatuses = ["CONFIRMED", "PENDING"] as const;
+
+  // Covers today
   const activeTodayFilter = {
     booking_status: { in: [...activeStatuses] },
     start_date: { lte: now },
+    end_date: { gte: now },
+  };
+
+  // Any future-or-current active booking
+  const futureFilter = {
+    booking_status: { in: [...activeStatuses] },
     end_date: { gte: now },
   };
 
@@ -74,20 +81,52 @@ export async function getBooths(params?: { q?: string; status?: string }) {
       zone: true,
       _count: {
         select: {
-          // Prisma filtered count: count only active-today bookings
           bookings: { where: activeTodayFilter },
         },
       },
+      // Active booking today (to show end date)
+      bookings: {
+        where: activeTodayFilter,
+        select: { id: true, start_date: true, end_date: true, booking_status: true, user: { select: { name: true } } },
+        orderBy: { start_date: "asc" },
+        take: 1,
+      },
     },
-    orderBy: {
-      name: "asc",
-    },
+    orderBy: { name: "asc" },
   });
 
-  // Flatten: expose hasActiveBooking as a top-level field
+  // For each booth also fetch: upcoming booking count + next booking start date
+  const boothIds = booths.map((b) => b.id);
+
+  const [upcomingCounts, nextBookings] = await Promise.all([
+    // Count all future active bookings per booth
+    db.booking.groupBy({
+      by: ["booth_id"],
+      where: { booth_id: { in: boothIds }, ...futureFilter },
+      _count: { _all: true },
+    }),
+    // Next upcoming booking that starts AFTER now (i.e. not active today, but coming up)
+    db.booking.findMany({
+      where: {
+        booth_id: { in: boothIds },
+        booking_status: { in: [...activeStatuses] },
+        start_date: { gt: now },
+      },
+      select: { booth_id: true, start_date: true, end_date: true },
+      orderBy: { start_date: "asc" },
+      distinct: ["booth_id"],
+    }),
+  ]);
+
+  const upcomingMap = new Map(upcomingCounts.map((r) => [r.booth_id, r._count._all]));
+  const nextBookingMap = new Map(nextBookings.map((r) => [r.booth_id, r]));
+
   return booths.map((b) => ({
     ...b,
     hasActiveBooking: b._count.bookings > 0,
+    activeBooking: b.bookings[0] ?? null,
+    upcomingCount: upcomingMap.get(b.id) ?? 0,
+    nextBooking: nextBookingMap.get(b.id) ?? null,
   }));
 }
 export async function createBoothAction(formData: FormData) {
