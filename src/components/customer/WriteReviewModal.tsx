@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Star, X, Loader2, MessageSquare } from "lucide-react";
+import { Star, X, Loader2, MessageSquare, CheckCircle2 } from "lucide-react";
 import { api } from "@/trpc/react";
 import { useRouter } from "next/navigation";
 
@@ -26,7 +26,7 @@ export default function WriteReviewModal({
     api.review.create.useMutation({
       onSuccess: () => {
         router.refresh();
-        setTimeout(onClose, 1500);
+        setTimeout(onClose, 2000); // ยืดเวลาออกนิดนึงให้ลูกค้าได้เห็นแอนิเมชันสำเร็จ
       },
     });
 
@@ -41,131 +41,154 @@ export default function WriteReviewModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 className="font-bold text-gray-900">เขียนรีวิว</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 p-4 backdrop-blur-sm">
+      {/* Modal Container with Entrance Animation */}
+      <div className="relative w-full max-w-[420px] animate-in zoom-in-95 fade-in duration-200 overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-orange-900/10">
+        
+        {/* Close button (Floating) */}
+        {!isSuccess && (
           <button
             onClick={onClose}
-            className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="absolute right-5 top-5 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 text-gray-400 transition-all hover:bg-orange-50 hover:text-orange-600"
           >
-            <X size={18} />
+            <X size={18} strokeWidth={2.5} />
           </button>
-        </div>
+        )}
 
-        <div className="px-6 py-5">
+        <div className="p-6 sm:p-8">
           {isSuccess ? (
-            <div className="flex flex-col items-center py-8">
-              <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                <MessageSquare size={30} className="text-green-500" />
+            /* ── SUCCESS STATE ── */
+            <div className="flex flex-col items-center justify-center py-8 text-center animate-in zoom-in-50 duration-500">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-orange-500 ring-4 ring-orange-50/50 shadow-inner">
+                <CheckCircle2 size={40} strokeWidth={2.5} />
               </div>
-              <p className="font-bold text-gray-900">ขอบคุณสำหรับรีวิว! 🎉</p>
-              <p className="mt-1 text-sm text-gray-500">รีวิวของคุณถูกบันทึกแล้ว</p>
+              <h3 className="mb-2 text-2xl font-black tracking-tight text-gray-900">
+                ขอบคุณสำหรับรีวิว! 🎉
+              </h3>
+              <p className="text-sm font-medium text-gray-500">
+                ความคิดเห็นของคุณมีความหมายกับเรามาก
+              </p>
             </div>
           ) : (
-            <>
-              {/* Review type toggle */}
-              <div className="mb-5 flex rounded-xl bg-gray-100 p-1">
+            /* ── REVIEW FORM ── */
+            <div className="flex flex-col">
+              <div className="mb-6 text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-orange-500 ring-1 ring-orange-100">
+                  <MessageSquare size={28} strokeWidth={2} />
+                </div>
+                <h2 className="text-xl font-extrabold tracking-tight text-gray-900">
+                  เขียนรีวิว
+                </h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  แบ่งปันประสบการณ์ของคุณให้คนอื่นทราบ
+                </p>
+              </div>
+
+              {/* Review Type Toggle (Pill shape) */}
+              <div className="mb-6 flex rounded-2xl bg-gray-50/80 p-1.5 ring-1 ring-gray-200/50">
                 <button
                   onClick={() => setReviewType("BOOTH")}
-                  className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                  className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition-all duration-300 ${
                     reviewType === "BOOTH"
-                      ? "bg-white text-orange-600 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white text-orange-600 shadow-sm ring-1 ring-gray-200/50"
+                      : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
                   รีวิวบูธ
                 </button>
                 <button
                   onClick={() => setReviewType("MARKET")}
-                  className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                  className={`flex-1 rounded-xl py-2.5 text-sm font-bold transition-all duration-300 ${
                     reviewType === "MARKET"
-                      ? "bg-white text-orange-600 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white text-orange-600 shadow-sm ring-1 ring-gray-200/50"
+                      : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
-                  รีวิวตลาด
+                  ภาพรวมตลาด
                 </button>
               </div>
 
-              {/* Booth name */}
-              <p className="mb-4 text-sm text-gray-500">
-                {reviewType === "BOOTH" ? (
-                  <>
-                    รีวิวสำหรับ:{" "}
-                    <span className="font-semibold text-gray-800">{boothName}</span>
-                  </>
-                ) : (
-                  "รีวิวภาพรวมของตลาด Ozone One"
-                )}
-              </p>
+              {/* Target Name */}
+              <div className="mb-6 rounded-2xl bg-orange-50/50 p-4 text-center ring-1 ring-orange-100">
+                <p className="text-sm font-medium text-orange-900/60">
+                  กำลังให้คะแนน
+                </p>
+                <p className="text-base font-bold text-orange-600">
+                  {reviewType === "BOOTH" ? boothName : "ตลาด Ozone One"}
+                </p>
+              </div>
 
-              {/* Star rating */}
-              <div className="mb-5">
-                <p className="mb-2 text-sm font-semibold text-gray-700">
-                  คะแนน <span className="text-red-400">*</span>
+              {/* Interactive Star Rating (Float Effect) */}
+              <div className="mb-6 flex flex-col items-center">
+                <p className="mb-3 text-sm font-bold text-gray-700">
+                  ให้คะแนนความพึงพอใจ <span className="text-red-500">*</span>
                 </p>
                 <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onMouseEnter={() => setHovered(star)}
-                      onMouseLeave={() => setHovered(0)}
-                      onClick={() => setRating(star)}
-                      className="transition-transform hover:scale-125"
-                    >
-                      <Star
-                        size={32}
-                        className={
-                          star <= (hovered || rating)
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-gray-300"
-                        }
-                        fill={
-                          star <= (hovered || rating) ? "currentColor" : "none"
-                        }
-                      />
-                    </button>
-                  ))}
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const isActive = star <= (hovered || rating);
+                    return (
+                      <button
+                        key={star}
+                        onMouseEnter={() => setHovered(star)}
+                        onMouseLeave={() => setHovered(0)}
+                        onClick={() => setRating(star)}
+                        className={`cursor-pointer transition-all duration-300 ${
+                          isActive
+                            ? "scale-110 -translate-y-1 drop-shadow-md" // เอฟเฟกต์ Float เมื่อ Active/Hover
+                            : "scale-100 translate-y-0 opacity-40 hover:opacity-80"
+                        }`}
+                      >
+                        <Star
+                          size={36}
+                          className={`transition-colors duration-300 ${
+                            isActive
+                              ? "fill-orange-400 text-orange-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Comment */}
-              <div className="mb-5">
-                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                  ความคิดเห็น (ไม่บังคับ)
+              {/* Comment Textarea */}
+              <div className="mb-8">
+                <label className="mb-2 block text-sm font-bold text-gray-700">
+                  ความคิดเห็นเพิ่มเติม <span className="text-gray-400 font-medium">(ไม่บังคับ)</span>
                 </label>
                 <textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  placeholder="เล่าประสบการณ์ของคุณ..."
+                  placeholder="ความประทับใจ, ข้อเสนอแนะ..."
                   rows={4}
-                  className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  className="w-full resize-none rounded-2xl border-none bg-gray-50/80 px-4 py-3 text-sm text-gray-900 shadow-sm ring-1 ring-gray-200/60 transition-all placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
                 />
               </div>
 
+              {/* Error Message */}
               {isError && (
-                <p className="mb-4 rounded-xl bg-red-50 px-4 py-2 text-sm text-red-600">
-                  {(error as any)?.message ?? "เกิดข้อผิดพลาด"}
-                </p>
+                <div className="mb-6 rounded-2xl bg-red-50 p-3 text-center text-sm font-medium text-red-600 ring-1 ring-red-100">
+                  {error?.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่"}
+                </div>
               )}
 
+              {/* Floating Submit Button */}
               <button
                 onClick={handleSubmit}
                 disabled={rating === 0 || isPending}
-                className="w-full rounded-xl bg-orange-500 py-3 text-sm font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="group relative flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 py-4 text-sm font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:-translate-y-0.5 hover:shadow-orange-500/50 disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-orange-500/30"
               >
                 {isPending ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 size={16} className="animate-spin" />
-                    กำลังบันทึก...
-                  </span>
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>กำลังบันทึก...</span>
+                  </>
                 ) : (
-                  "ส่งรีวิว"
+                  <span>ส่งรีวิว</span>
                 )}
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
