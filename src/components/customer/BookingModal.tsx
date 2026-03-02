@@ -7,9 +7,12 @@ import {
     Loader2,
     QrCode,
     Download,
-    Upload,
+    UploadCloud,
     ImageIcon,
     AlertCircle,
+    Receipt,
+    Trash2,
+    ArrowRight,
 } from "lucide-react";
 import { api } from "@/trpc/react";
 import { useRouter } from "next/navigation";
@@ -56,10 +59,9 @@ export default function BookingModal({
         },
     });
 
-    // Generate QR code when entering payment step
     useEffect(() => {
         if (step === "payment") {
-        void generateQR();
+            void generateQR();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step]);
@@ -73,8 +75,8 @@ export default function BookingModal({
             const url = await QRCode.toDataURL(payload, {
                 type: "image/png",
                 width: 300,
-                margin: 2,
-                color: { dark: "#1a1a2e", light: "#ffffff" },
+                margin: 1, // ลดขอบขาว QR Code ให้ดูเต็มขึ้น
+                color: { dark: "#000000", light: "#ffffff" },
             });
             setQrDataUrl(url);
         } catch (err) {
@@ -94,7 +96,7 @@ export default function BookingModal({
         const file = e.target.files?.[0];
         if (!file) return;
         if (file.size > MAX_FILE_BYTES) {
-            toast.error("ไฟล์ใหญ่เกิน 5 MB กรุณาเลือกไฟล์ขนาดเล็กกว่า");
+            toast.error("ไฟล์ใหญ่เกิน 5 MB กรุณาเลือกรูปภาพใหม่");
             e.target.value = "";
             return;
         }
@@ -120,14 +122,13 @@ export default function BookingModal({
                 body: formData,
             });
 
-            // Handle non-OK responses
             if (!response.ok) {
                 let errorMsg = `เกิดข้อผิดพลาด (${response.status})`;
                 try {
                     const errorResult = (await response.json()) as { message?: string };
                     errorMsg = errorResult.message ?? errorMsg;
                 } catch {
-                    errorMsg = `API Error: ${response.status} ${response.statusText}`;
+                    errorMsg = `API Error: ${response.status}`;
                 }
                 setVerifyMessage(errorMsg);
                 setStep("error");
@@ -137,7 +138,7 @@ export default function BookingModal({
             const result = (await response.json()) as { verified: boolean; message?: string };
 
             if (result.verified) {
-                setVerifyMessage(result.message ?? "สำเร็จ");
+                setVerifyMessage(result.message ?? "ตรวจสอบสำเร็จ");
                 setStep("success");
             } else {
                 setVerifyMessage(result.message ?? "ไม่สามารถตรวจสอบสลิปได้");
@@ -145,314 +146,305 @@ export default function BookingModal({
             }
         } catch (err) {
             console.error("Upload error:", err);
-            setVerifyMessage("เกิดข้อผิดพลาด กรุณาลองใหม่");
+            setVerifyMessage("ระบบขัดข้อง กรุณาลองใหม่");
             setStep("error");
         }
     }
 
+    // Helper formatting
+    const formatDate = (d: string) =>
+        new Date(d).toLocaleDateString("th-TH", {
+            day: "numeric",
+            month: "short",
+            year: "2-digit",
+        });
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="relative mx-4 w-full max-w-md animate-in zoom-in-95 fade-in duration-200 rounded-3xl bg-white p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
-                {/* Close button */}
-                <button
-                    onClick={onClose}
-                    className="absolute right-4 top-4 z-10 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                >
-                    <X size={20} />
-                </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 p-4 backdrop-blur-sm">
+            {/* Modal Container */}
+            <div className="relative w-full max-w-[420px] animate-in zoom-in-95 fade-in duration-200 overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-orange-900/10">
+                
+                {/* Close button (Floating) */}
+                {step !== "uploading" && (
+                    <button
+                        onClick={onClose}
+                        className="absolute right-5 top-5 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100/80 text-gray-500 backdrop-blur-md transition-all hover:bg-gray-200 hover:text-gray-900"
+                    >
+                        <X size={18} />
+                    </button>
+                )}
 
-                {/* Step 1: Confirm Booking */}
-                {step === "confirm" && (
-                    <div>
-                        <div className="mb-6 text-center">
-                            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100">
-                                <QrCode size={28} className="text-orange-600" />
+                <div className="max-h-[85vh] overflow-y-auto p-6 sm:p-8">
+                    
+                    {/* ── STEP 1: CONFIRM ────────────────────────────────────────── */}
+                    {step === "confirm" && (
+                        <div className="flex flex-col">
+                            <div className="mb-6 flex flex-col items-center text-center">
+                                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-orange-500 ring-1 ring-orange-100">
+                                    <Receipt size={28} strokeWidth={2} />
+                                </div>
+                                <h3 className="text-xl font-extrabold tracking-tight text-gray-900">
+                                    ยืนยันการจองพื้นที่
+                                </h3>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    โปรดตรวจสอบรายละเอียดก่อนชำระเงิน
+                                </p>
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900">ยืนยันการจอง</h3>
-                            <p className="mt-1 text-sm text-gray-500">
-                                ตรวจสอบรายละเอียดก่อนดำเนินการ
-                            </p>
-                        </div>
 
-                        <div className="mb-6 space-y-3 rounded-2xl bg-gray-50 p-4">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">พื้นที่</span>
-                                <span className="font-semibold text-gray-900">
-                                    {booth.name}
-                                </span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">วันเริ่มต้น</span>
-                                <span className="font-medium text-gray-700">
-                                    {new Date(startDate).toLocaleDateString("th-TH", {
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric",
-                                    })}
-                                </span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">วันสิ้นสุด</span>
-                                <span className="font-medium text-gray-700">
-                                    {new Date(endDate).toLocaleDateString("th-TH", {
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric",
-                                    })}
-                                </span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">จำนวน</span>
-                                <span className="font-medium text-gray-700">{days} วัน</span>
-                            </div>
-                            <div className="border-t border-gray-200 pt-2">
-                                <div className="flex justify-between">
-                                    <span className="font-bold text-gray-900">ยอดรวม</span>
-                                    <span className="text-xl font-bold text-orange-600">
+                            {/* Minimal Receipt Card */}
+                            <div className="mb-8 rounded-2xl bg-gray-50 p-5 ring-1 ring-gray-100">
+                                <div className="mb-4 flex items-center justify-between border-b border-gray-200/60 pb-4">
+                                    <span className="text-sm font-medium text-gray-500">พื้นที่</span>
+                                    <span className="font-bold text-gray-900">{booth.name}</span>
+                                </div>
+                                
+                                <div className="space-y-3">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-500">วันที่จอง</span>
+                                        <span className="font-medium text-gray-800">
+                                            {formatDate(startDate)} <ArrowRight className="inline mx-1 text-gray-300" size={12}/> {formatDate(endDate)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-500">จำนวนวัน</span>
+                                        <span className="font-medium text-gray-800">{days} วัน</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-500">ราคา/วัน</span>
+                                        <span className="font-medium text-gray-800">฿{booth.price.toLocaleString()}</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex items-end justify-between border-t border-gray-200/60 pt-4">
+                                    <span className="text-sm font-bold text-gray-900">ยอดรวมทั้งสิ้น</span>
+                                    <span className="text-2xl font-black tracking-tight text-orange-600">
                                         ฿{totalPrice.toLocaleString()}
                                     </span>
                                 </div>
                             </div>
-                        </div>
 
-                        <button
-                            onClick={handleConfirmBooking}
-                            disabled={createBooking.isPending}
-                            className="w-full rounded-xl bg-gray-900 py-4 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-orange-600 disabled:opacity-50"
-                        >
-                            {createBooking.isPending ? (
-                                <span className="flex items-center justify-center gap-2">
-                                    <Loader2 size={18} className="animate-spin" />
-                                    กำลังดำเนินการ...
-                                </span>
-                            ) : (
-                                "ดำเนินการชำระเงิน"
-                            )}
-                        </button>
-
-                        {createBooking.error && (
-                            <p className="mt-3 text-center text-sm text-red-500">
-                                {createBooking.error.message}
-                            </p>
-                        )}
-                    </div>
-                )}
-
-                {/* Step 2: QR Code Payment + Slip Upload */}
-                {step === "payment" && (
-                    <div>
-                        <div className="mb-4 text-center">
-                            <h3 className="text-xl font-bold text-gray-900">
-                                ชำระเงินผ่าน QR Code
-                            </h3>
-                            <p className="mt-1 text-sm text-gray-500">
-                                1. สแกน QR จ่ายเงิน → 2. อัปโหลดสลิป
-                            </p>
-                        </div>
-
-                        {/* QR Code */}
-                        <div className="mb-4 flex flex-col items-center">
-                            <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-white p-3">
-                                {qrDataUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img
-                                        src={qrDataUrl}
-                                        alt="PromptPay QR Code"
-                                        className="h-52 w-52"
-                                    />
+                            <button
+                                onClick={handleConfirmBooking}
+                                disabled={createBooking.isPending}
+                                className="group relative flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 py-4 text-sm font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:-translate-y-0.5 hover:shadow-orange-500/50 disabled:opacity-70 disabled:hover:translate-y-0"
+                            >
+                                {createBooking.isPending ? (
+                                    <>
+                                        <Loader2 size={18} className="animate-spin" />
+                                        <span>กำลังสร้างรายการ...</span>
+                                    </>
                                 ) : (
-                                    <div className="flex h-52 w-52 items-center justify-center">
-                                        <Loader2
-                                            size={32}
-                                            className="animate-spin text-gray-400"
-                                        />
-                                    </div>
+                                    <>
+                                        <span>ดำเนินการชำระเงิน</span>
+                                        <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                                    </>
                                 )}
-                            </div>
-                            <div className="mt-3 rounded-xl bg-blue-50 px-4 py-2 text-center">
-                                <p className="text-xs font-medium text-blue-600">PromptPay</p>
-                                <p className="text-xl font-bold text-blue-900">
-                                    ฿{totalPrice.toLocaleString()}
+                            </button>
+
+                            {createBooking.error && (
+                                <p className="mt-4 text-center text-xs font-medium text-red-500">
+                                    {createBooking.error.message}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── STEP 2: PAYMENT & UPLOAD ─────────────────────────────── */}
+                    {step === "payment" && (
+                        <div className="flex flex-col">
+                            <div className="mb-6 text-center">
+                                <h3 className="text-xl font-extrabold tracking-tight text-gray-900">
+                                    สแกน & อัปโหลดสลิป
+                                </h3>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    รหัสการจอง: <span className="font-mono text-orange-600">{bookingId.split('-')[0].toUpperCase()}</span>
                                 </p>
                             </div>
-                            {qrDataUrl && (
-                                <a
-                                    href={qrDataUrl}
-                                    download={`payment-${bookingId}.png`}
-                                    className="mt-2 inline-flex items-center gap-1 text-xs text-gray-400 underline hover:text-gray-600"
-                                >
-                                    <Download size={12} />
-                                    ดาวน์โหลด QR Code
-                                </a>
-                            )}
-                        </div>
 
-                        {/* Divider */}
-                        <div className="relative my-5">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-200" />
-                            </div>
-                            <div className="relative flex justify-center text-xs">
-                                <span className="bg-white px-3 font-medium text-gray-400 uppercase tracking-wider">
-                                    โอนเงินแล้ว ? อัปโหลดสลิป
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Slip Upload */}
-                        <div className="mb-4">
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileSelect}
-                                className="hidden"
-                            />
-
-                            {slipPreview ? (
-                                <div className="relative rounded-xl border-2 border-green-200 bg-green-50/50 p-2">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        src={slipPreview}
-                                        alt="สลิป"
-                                        className="mx-auto max-h-40 rounded-lg object-contain"
-                                    />
-                                    <button
-                                        onClick={() => {
-                                            setSlipPreview("");
-                                            if (fileInputRef.current) fileInputRef.current.value = "";
-                                        }}
-                                        className="absolute top-2 right-2 rounded-full bg-white p-1 shadow-sm hover:bg-gray-100"
-                                    >
-                                        <X size={14} />
-                                    </button>
+                            {/* QR Code Card */}
+                            <div className="mb-6 flex flex-col items-center rounded-3xl bg-blue-50/50 p-6 ring-1 ring-blue-100/50">
+                                <div className="mb-4 overflow-hidden rounded-2xl bg-white p-2 shadow-sm ring-1 ring-gray-100">
+                                    {qrDataUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={qrDataUrl} alt="PromptPay" className="h-44 w-44 object-contain" />
+                                    ) : (
+                                        <div className="flex h-44 w-44 items-center justify-center">
+                                            <Loader2 size={24} className="animate-spin text-gray-300" />
+                                        </div>
+                                    )}
                                 </div>
-                            ) : (
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="w-full rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center transition-all hover:border-orange-300 hover:bg-orange-50/30"
-                                >
-                                    <Upload
-                                        size={24}
-                                        className="mx-auto mb-2 text-gray-400"
-                                    />
-                                    <p className="text-sm font-medium text-gray-600">
-                                        กดเพื่อเลือกรูปสลิป
+                                <div className="text-center">
+                                    <p className="text-xs font-bold tracking-wider text-blue-600 uppercase">PromptPay</p>
+                                    <p className="text-2xl font-black tracking-tight text-gray-900">
+                                        ฿{totalPrice.toLocaleString()}
                                     </p>
-                                    <p className="text-xs text-gray-400">
-                                        รองรับ JPG, PNG (สูงสุด 5MB)
-                                    </p>
-                                </button>
-                            )}
-                        </div>
+                                </div>
+                                {qrDataUrl && (
+                                    <a
+                                        href={qrDataUrl}
+                                        download={`QR-${bookingId.slice(0, 8)}.png`}
+                                        className="mt-3 flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-bold text-gray-600 shadow-sm transition-all hover:bg-gray-50 hover:text-gray-900 ring-1 ring-gray-200/50"
+                                    >
+                                        <Download size={12} />
+                                        บันทึก QR Code
+                                    </a>
+                                )}
+                            </div>
 
-                        <button
-                            onClick={handleUploadSlip}
-                            disabled={!slipPreview}
-                            className={`w-full rounded-xl py-4 text-sm font-bold uppercase tracking-wider transition-all ${slipPreview
-                                ? "bg-green-600 text-white hover:bg-green-700"
-                                : "cursor-not-allowed bg-gray-100 text-gray-400"
+                            {/* Upload Zone */}
+                            <div className="mb-6">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileSelect}
+                                    className="hidden"
+                                />
+
+                                {slipPreview ? (
+                                    <div className="group relative overflow-hidden rounded-2xl bg-gray-50 ring-2 ring-orange-500 ring-offset-2">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={slipPreview}
+                                            alt="สลิปที่อัปโหลด"
+                                            className="mx-auto max-h-48 w-full object-contain"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                                            <button
+                                                onClick={() => {
+                                                    setSlipPreview("");
+                                                    if (fileInputRef.current) fileInputRef.current.value = "";
+                                                }}
+                                                className="flex items-center gap-2 rounded-full bg-red-500 px-4 py-2 text-sm font-bold text-white shadow-lg transition-transform hover:scale-105"
+                                            >
+                                                <Trash2 size={16} /> ลบรูปภาพ
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 px-4 py-8 transition-all hover:border-orange-400 hover:bg-orange-50"
+                                    >
+                                        <div className="mb-3 rounded-full bg-white p-3 shadow-sm ring-1 ring-gray-100">
+                                            <UploadCloud size={24} className="text-orange-500" />
+                                        </div>
+                                        <p className="text-sm font-bold text-gray-700">อัปโหลดรูปสลิปโอนเงิน</p>
+                                        <p className="mt-1 text-xs font-medium text-gray-400">JPG หรือ PNG (ไม่เกิน 5MB)</p>
+                                    </button>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={handleUploadSlip}
+                                disabled={!slipPreview}
+                                className={`flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold transition-all ${
+                                    slipPreview
+                                        ? "bg-gray-900 text-white shadow-lg hover:bg-gray-800"
+                                        : "cursor-not-allowed bg-gray-100 text-gray-400"
                                 }`}
-                        >
-                            <span className="flex items-center justify-center gap-2">
+                            >
                                 <ImageIcon size={18} />
-                                ยืนยันและตรวจสอบสลิป
-                            </span>
-                        </button>
-                    </div>
-                )}
-
-                {/* Step: Uploading / Verifying */}
-                {step === "uploading" && (
-                    <div className="py-12 text-center">
-                        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-blue-100">
-                            <Loader2 size={36} className="animate-spin text-blue-600" />
-                        </div>
-                        <h3 className="mb-2 text-xl font-bold text-gray-900">
-                            กำลังตรวจสอบสลิป...
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                            ระบบกำลังตรวจสอบสลิปโอนเงินอัตโนมัติ
-                        </p>
-                    </div>
-                )}
-
-                {/* Step: Success */}
-                {step === "success" && (
-                    <div className="text-center">
-                        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-                            <CheckCircle size={40} className="text-green-600" />
-                        </div>
-                        <h3 className="mb-2 text-2xl font-bold text-gray-900">
-                            จองสำเร็จ! 🎉
-                        </h3>
-                        <p className="mb-2 text-sm text-green-600 font-medium">
-                            {verifyMessage}
-                        </p>
-                        <p className="mb-6 text-sm text-gray-500">
-                            ระบบได้บันทึกการจองของคุณเรียบร้อยแล้ว
-                            <br />
-                            ท่านสามารถตรวจสอบสถานะได้ที่{" "}
-                            <span className="font-medium text-orange-600">
-                                &quot;พื้นที่ของฉัน&quot;
-                            </span>
-                        </p>
-
-                        <div className="mb-6 rounded-2xl bg-green-50 p-4 text-left">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">พื้นที่</span>
-                                <span className="font-semibold text-gray-900">
-                                    {booth.name}
-                                </span>
-                            </div>
-                            <div className="mt-2 flex justify-between text-sm">
-                                <span className="text-gray-500">สถานะ</span>
-                                <span className="font-semibold text-green-600">
-                                    ✓ ยืนยันแล้ว
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => router.push("/customer")}
-                                className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-50"
-                            >
-                                กลับหน้าหลัก
-                            </button>
-                            <button
-                                onClick={() => router.push("/customer/my-space")}
-                                className="flex-1 rounded-xl bg-orange-600 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-700"
-                            >
-                                ดูพื้นที่ของฉัน
+                                ยืนยันสลิปและชำระเงิน
                             </button>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Step: Error */}
-                {step === "error" && (
-                    <div className="text-center">
-                        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
-                            <AlertCircle size={40} className="text-red-600" />
+                    {/* ── STEP 3: UPLOADING ──────────────────────────────────────── */}
+                    {step === "uploading" && (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <div className="relative mb-6 flex h-20 w-20 items-center justify-center">
+                                <div className="absolute inset-0 animate-ping rounded-full bg-orange-100"></div>
+                                <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 ring-1 ring-orange-200">
+                                    <Loader2 size={28} className="animate-spin text-orange-600" />
+                                </div>
+                            </div>
+                            <h3 className="mb-2 text-xl font-extrabold tracking-tight text-gray-900">
+                                กำลังตรวจสอบสลิป...
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                                ระบบกำลังประมวลผลข้อมูล โปรดรอสักครู่
+                            </p>
                         </div>
-                        <h3 className="mb-2 text-xl font-bold text-gray-900">
-                            ตรวจสอบสลิปไม่สำเร็จ
-                        </h3>
-                        <p className="mb-6 text-sm text-red-500">{verifyMessage}</p>
+                    )}
 
-                        <button
-                            onClick={() => {
-                                setSlipPreview("");
-                                if (fileInputRef.current) fileInputRef.current.value = "";
-                                setStep("payment");
-                            }}
-                            className="w-full rounded-xl bg-gray-900 py-4 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-orange-600"
-                        >
-                            ลองอัปโหลดใหม่
-                        </button>
-                    </div>
-                )}
+                    {/* ── STEP 4: SUCCESS ────────────────────────────────────────── */}
+                    {step === "success" && (
+                        <div className="flex flex-col items-center text-center">
+                            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 ring-4 ring-emerald-50/50">
+                                <CheckCircle size={40} strokeWidth={2.5} />
+                            </div>
+                            <h3 className="mb-2 text-2xl font-black tracking-tight text-gray-900">
+                                จองสำเร็จ! 🎉
+                            </h3>
+                            <p className="mb-6 text-sm text-gray-500">
+                                ชำระเงินเรียบร้อยแล้ว <br/>
+                                <span className="font-medium text-emerald-600">{verifyMessage}</span>
+                            </p>
+
+                            <div className="w-full mb-8 rounded-2xl bg-gray-50 p-4 text-left ring-1 ring-gray-100">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">พื้นที่</span>
+                                    <span className="font-bold text-gray-900">{booth.name}</span>
+                                </div>
+                                <div className="mt-3 flex justify-between text-sm border-t border-gray-200/60 pt-3">
+                                    <span className="text-gray-500">สถานะ</span>
+                                    <span className="font-bold text-emerald-600">✓ ยืนยันการจองแล้ว</span>
+                                </div>
+                            </div>
+
+                            <div className="flex w-full flex-col gap-3">
+                                <button
+                                    onClick={() => router.push("/customer/my-space")}
+                                    className="w-full rounded-2xl bg-orange-600 py-4 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:bg-orange-700 hover:shadow-orange-500/40"
+                                >
+                                    ดูพื้นที่ของฉัน
+                                </button>
+                                <button
+                                    onClick={onClose}
+                                    className="w-full rounded-2xl bg-gray-50 py-3.5 text-sm font-bold text-gray-600 transition-all hover:bg-gray-100 hover:text-gray-900"
+                                >
+                                    ปิดหน้าต่าง
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── STEP 5: ERROR ──────────────────────────────────────────── */}
+                    {step === "error" && (
+                        <div className="flex flex-col items-center text-center">
+                            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-50 text-red-500 ring-4 ring-red-50/50">
+                                <AlertCircle size={40} strokeWidth={2.5} />
+                            </div>
+                            <h3 className="mb-2 text-xl font-extrabold tracking-tight text-gray-900">
+                                ตรวจสอบไม่สำเร็จ
+                            </h3>
+                            <p className="mb-8 text-sm text-red-600/80">
+                                {verifyMessage}
+                            </p>
+
+                            <div className="flex w-full flex-col gap-3">
+                                <button
+                                    onClick={() => {
+                                        setSlipPreview("");
+                                        if (fileInputRef.current) fileInputRef.current.value = "";
+                                        setStep("payment");
+                                    }}
+                                    className="w-full rounded-2xl bg-gray-900 py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-gray-800"
+                                >
+                                    อัปโหลดสลิปใหม่
+                                </button>
+                                <button
+                                    onClick={onClose}
+                                    className="w-full rounded-2xl bg-white py-3.5 text-sm font-bold text-gray-500 transition-all hover:bg-gray-50 hover:text-gray-700"
+                                >
+                                    ยกเลิก
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                </div>
             </div>
         </div>
     );
