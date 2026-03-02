@@ -153,25 +153,7 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
               </>
             )}
 
-            {/* Status badge */}
-            <div className="absolute top-4 right-4">
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold tracking-wider uppercase shadow-sm backdrop-blur-md ${
-                  booth.is_available
-                    ? "border border-green-200/30 bg-green-500/10 text-green-600"
-                    : "border border-red-200/30 bg-red-500/10 text-red-600"
-                }`}
-              >
-                {booth.is_available ? (
-                  <>
-                    <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
-                    ว่าง
-                  </>
-                ) : (
-                  "เต็ม"
-                )}
-              </span>
-            </div>
+       
           </div>
 
           {/* Thumbnail strip */}
