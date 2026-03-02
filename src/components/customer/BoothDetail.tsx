@@ -19,6 +19,10 @@ import Link from "next/link";
 import BookingModal from "./BookingModal";
 import WriteReviewModal from "./WriteReviewModal";
 import Image from "next/image";
+import { formatCurrency, formatThaiDate } from "@/lib/utils/format";
+import { getLabelReviewType } from "@/lib/utils/label";
+import { type Review } from "@/types";
+
 export interface BoothDetailProps {
   booth: {
     id: string;
@@ -29,14 +33,12 @@ export interface BoothDetailProps {
     latitude: number | null;
     longitude: number | null;
     images: { id: string; path: string }[];
-    reviews: {
-      id: string;
+    reviews: (Omit<Review, "created_at" | "rating" | "user" | "type"> & {
       rating: number;
-      comment: string | null;
       type: string;
       created_at: string;
       user: { name: string | null; image: string | null };
-    }[];
+    })[];
     bookings: { start_date: string; end_date: string }[];
   };
 }
@@ -87,11 +89,7 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
   }, [booth.latitude, booth.longitude]);
 
   function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString("th-TH", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    return formatThaiDate(new Date(dateStr));
   }
 
   return (
@@ -113,9 +111,10 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
             <Image
               src={images[currentImage]?.path ?? "/placeholder-image.jpg"}
               alt={booth.name}
-              className="h-full w-full object-cover transition-all duration-500"
-              width={500}
-              height={500}
+              fill
+              className="object-cover transition-all duration-500"
+              priority
+              sizes="(max-width: 768px) 100vw, 60vw"
             />
             {images.length > 1 && (
               <>
@@ -189,9 +188,11 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
                       : "opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <img
+                  <Image
                     src={img.path}
                     alt=""
+                    width={80}
+                    height={64}
                     className="h-full w-full object-cover"
                   />
                 </button>
@@ -226,7 +227,7 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
 
             <div className="flex items-baseline gap-2 border-t border-gray-50 pt-4">
               <span className="text-4xl font-bold text-gray-900">
-                ฿{booth.price.toLocaleString()}
+                {formatCurrency(booth.price)}
               </span>
               <span className="text-base text-gray-400">/วัน</span>
             </div>
@@ -351,9 +352,11 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
                       <div className="mb-2 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           {review.user.image ? (
-                            <img
+                            <Image
                               src={review.user.image}
                               alt=""
+                              width={36}
+                              height={36}
                               className="h-9 w-9 rounded-full object-cover"
                             />
                           ) : (
@@ -393,7 +396,11 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
                                 : "bg-purple-50 text-purple-600"
                             }`}
                           >
-                            {review.type === "BOOTH" ? "บูธ" : "ตลาด"}
+                            {getLabelReviewType(
+                              review as any as Parameters<
+                                typeof getLabelReviewType
+                              >[0],
+                            )}
                           </span>
                           <span className="text-xs text-gray-400">
                             {formatDate(review.created_at)}
@@ -462,10 +469,10 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
               <div className="mb-6 rounded-xl bg-orange-50/50 p-4">
                 <div className="mb-2 flex items-center justify-between text-sm text-gray-600">
                   <span>
-                    ฿{booth.price.toLocaleString()} × {days} วัน
+                    {formatCurrency(booth.price)} × {days} วัน
                   </span>
                   <span className="font-medium">
-                    ฿{totalPrice.toLocaleString()}
+                    {formatCurrency(totalPrice)}
                   </span>
                 </div>
                 <div className="border-t border-orange-100 pt-2">
@@ -474,7 +481,7 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
                       ยอดรวมทั้งหมด
                     </span>
                     <span className="text-2xl font-bold text-orange-600">
-                      ฿{totalPrice.toLocaleString()}
+                      {formatCurrency(totalPrice)}
                     </span>
                   </div>
                 </div>
