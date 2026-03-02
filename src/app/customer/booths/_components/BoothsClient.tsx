@@ -10,7 +10,6 @@ import {
   Star,
   Maximize2,
   ArrowRight,
-  MapPin,
 } from "lucide-react";
 import { type Booth, type Zone } from "@/types";
 import Image from "next/image";
@@ -204,18 +203,8 @@ export default function BoothsClient({
                   />
 
                   {/* Floating Overlay Top */}
-                  <div className="absolute top-3 right-3 left-3 flex items-start justify-between">
-                    {/* Status Badge */}
-                    {!booth.is_available ? (
-                      <span className="rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-red-600 shadow-sm backdrop-blur-sm">
-                        ไม่ว่าง
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-emerald-600 shadow-sm backdrop-blur-sm">
-                        ว่าง
-                      </span>
-                    )}
-
+                  <div className="absolute top-3 right-3 left-3 flex items-start justify-end">
+         
                     {/* Zone Badge */}
                     {booth.zone && (
                       <span className="flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm backdrop-blur-sm">
