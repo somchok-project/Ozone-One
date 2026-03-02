@@ -96,8 +96,10 @@ export default function HeroSection() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="mb-6 text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl xl:text-7xl"
             >
-              <span className="block font-light text-gray-600">The New</span>
-              <span className="block">Standard of</span>
+              <span className="block font-light text-gray-600">
+                มาตรฐานใหม่
+              </span>
+              <span className="block">แห่งการ</span>
               <span className="relative whitespace-nowrap text-orange-600">
                 {/* Underline Shape */}
                 <svg
@@ -108,7 +110,7 @@ export default function HeroSection() {
                 >
                   <path d="M203.371.916c-26.013-2.078-76.686 1.963-124.73 9.946L67.3 12.749C46.169 14.6 21.418 17.065 6.326 20.649 1.487 21.795-1.07 26.696 1.706 30.697c2.316 3.336 6.551 4.542 10.457 3.52 9.079-2.378 19.347-4.499 30.347-6.236 43.15-6.816 110.154-10.235 198.243-7.55 88.089 2.685 142.302 11.233 162.729 15.694 5.289 1.156 10.996-1.748 12.716-6.992 1.76-5.368-1.558-11.23-7.052-12.716-17.584-4.757-69.83-13.682-166.729-15.542z" />
                 </svg>
-                <span className="relative drop-shadow-sm">Trading</span>
+                <span className="relative drop-shadow-sm">ค้าขาย</span>
               </span>
             </motion.h1>
 

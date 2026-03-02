@@ -11,7 +11,7 @@ import {
   SubmitButton,
   AuthFooter,
 } from "@/components/auth";
-import { useActionState } from "react";
+import { useActionState, Suspense } from "react";
 import { login } from "../actions";
 import { useSearchParams } from "next/navigation";
 
@@ -19,7 +19,7 @@ const initialState = {
   error: "",
 };
 
-export default function LoginPage() {
+function LoginContent() {
   const [state, formAction] = useActionState(login, initialState);
   const searchParams = useSearchParams();
   const registered = searchParams.get("registered");
@@ -58,14 +58,6 @@ export default function LoginPage() {
             required
             label="รหัสผ่าน"
             placeholder="••••••••"
-            // labelRight={
-            //   <Link
-            //     href="/auth/forgot-password"
-            //     className="font-sans text-xs font-medium text-orange-500 hover:text-orange-600 hover:underline"
-            //   >
-            //     ลืมรหัสผ่าน?
-            //   </Link>
-            // }
           />
         </div>
 
@@ -83,5 +75,13 @@ export default function LoginPage() {
         href="/auth/register"
       />
     </AuthPageWrapper>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>กำลังโหลด...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

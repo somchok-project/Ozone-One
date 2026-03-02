@@ -85,7 +85,7 @@ export const authConfig = {
       },
     }),
   ],
-  adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(db as any),
   session: {
     strategy: "jwt",
   },

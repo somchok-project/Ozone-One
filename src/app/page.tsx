@@ -8,11 +8,12 @@ import {
 import { Reveal } from "@/components/ui/Reveal";
 
 
-export default function Home({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+export default async function Home(
+  props: {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   return (
     <div className="min-h-screen bg-stone-50 font-sans text-gray-800">
       <Navbar />

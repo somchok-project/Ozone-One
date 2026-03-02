@@ -4,7 +4,8 @@ import { db } from "@/server/db";
 import { UserForm } from "../_components/UserForm";
 import { notFound } from "next/navigation";
 
-export default async function EditUserPage({ params }: { params: { id: string } }) {
+export default async function EditUserPage(props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const userId = params.id;
 
     const user = await db.user.findUnique({

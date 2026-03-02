@@ -43,7 +43,7 @@ export default async function FeaturedBooths({
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-orange-100/50 px-4 py-1.5 text-sm font-semibold text-orange-600">
             <Sparkles size={16} />
-            <span>Top Rated Locations</span>
+            <span>ทำเลแนะนำที่ได้รับความนิยม</span>
           </div>
           <h2 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
             พื้นที่<span className="text-orange-600 italic">แนะนำ</span>
@@ -141,7 +141,9 @@ export default async function FeaturedBooths({
                       >
                         <span
                           className={`mr-2 block h-1.5 w-1.5 rounded-full ${
-                            !booth.is_available ? "bg-slate-400" : "animate-pulse bg-green-500"
+                            !booth.is_available
+                              ? "bg-slate-400"
+                              : "animate-pulse bg-green-500"
                           }`}
                         ></span>
                         {!booth.is_available ? "ปิดชั่วคราว" : "ว่างอยู่"}
@@ -211,7 +213,11 @@ export default async function FeaturedBooths({
                       }`}
                     >
                       <span className="relative z-10 flex items-center gap-2">
-                        {!booth.is_available ? "ปิดชั่วคราว" : booth.isCurrentlyBooked ? "จองวันอื่น" : "จองเลย"}
+                        {!booth.is_available
+                          ? "ปิดชั่วคราว"
+                          : booth.isCurrentlyBooked
+                            ? "จองวันอื่น"
+                            : "จองเลย"}
                         <ArrowRight
                           size={18}
                           className="transition-transform duration-500 group-hover/btn:translate-x-1.5"

@@ -4,11 +4,10 @@ import { db } from "@/server/db";
 import { BoothForm } from "../../_components/BoothForm";
 import { notFound } from "next/navigation";
 
-export default async function EditBoothPage({
-  params,
-}: {
-  params: { id: string };
+export default async function EditBoothPage(props: {
+  params: Promise<{ id: string }>;
 }) {
+  const params = await props.params;
   const boothId = params.id;
 
   const booth = await db.booth.findUnique({
@@ -46,7 +45,7 @@ export default async function EditBoothPage({
     id: booth.id,
     name: booth.name,
     price: booth.price,
-    is_available: booth.is_available.toString(),
+    is_available: booth.is_available,
     user_id: booth.user_id,
     zone_id: booth.zone_id,
     latitude: booth.latitude ? Number(booth.latitude) : "",
@@ -68,7 +67,7 @@ export default async function EditBoothPage({
         color: item.color,
         position: [item.position_x, item.position_y, item.position_z],
         rotation: [item.rotation_x, item.rotation_y, item.rotation_z],
-      }))
+      })),
     ),
   };
 

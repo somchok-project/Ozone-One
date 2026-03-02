@@ -23,11 +23,12 @@ import {
 } from "@/lib/utils/bookingStatus";
 import BookingCalendar from "./_components/BookingCalendar";
 
-export default async function BoothDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function BoothDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
   const booth = await db.booth.findUnique({
     where: { id: params.id },
     include: {
