@@ -4,16 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
-    Calendar,
-    MapPin,
-    CheckCircle,
-    Clock,
-    XCircle,
-    ArrowRight,
-    ShoppingBag,
-    CreditCard,
-    Trash2,
-    MessageSquare,
+  Calendar,
+  MapPin,
+  CheckCircle,
+  Clock,
+  XCircle,
+  ArrowRight,
+  ShoppingBag,
+  CreditCard,
+  Trash2,
+  MessageSquare,
 } from "lucide-react";
 import { api } from "@/trpc/react";
 import { useRouter } from "next/navigation";
@@ -22,292 +22,331 @@ import PaymentModal from "./PaymentModal";
 import WriteReviewModal from "./WriteReviewModal";
 
 interface Booking {
+  id: string;
+  start_date: string;
+  end_date: string;
+  total_price: number;
+  payment_status: string;
+  booking_status: string;
+  payment_slip_url: string | null;
+  booth: {
     id: string;
-    start_date: string;
-    end_date: string;
-    total_price: number;
-    payment_status: string;
-    booking_status: string;
-    payment_slip_url: string | null;
-    booth: {
-        id: string;
-        name: string;
-        price: number;
-        images: { id: string; path: string; booth_id: string }[];
-    };
+    name: string;
+    price: number;
+    images: { id: string; path: string; booth_id: string }[];
+  };
 }
 
 interface MySpaceClientProps {
-    bookings: Booking[];
+  bookings: Booking[];
 }
 
 const statusConfig: Record<
-    string,
-    { label: string; color: string; icon: typeof CheckCircle }
+  string,
+  { label: string; color: string; icon: typeof CheckCircle }
 > = {
-    CONFIRMED: {
-        label: "ยืนยันแล้ว",
-        color: "bg-green-50 text-green-700 border-green-200",
-        icon: CheckCircle,
-    },
-    PENDING: {
-        label: "รอดำเนินการ",
-        color: "bg-yellow-50 text-yellow-700 border-yellow-200",
-        icon: Clock,
-    },
-    COMPLETED: {
-        label: "เสร็จสิ้น",
-        color: "bg-blue-50 text-blue-700 border-blue-200",
-        icon: CheckCircle,
-    },
-    CANCELLED: {
-        label: "ยกเลิก",
-        color: "bg-red-50 text-red-700 border-red-200",
-        icon: XCircle,
-    },
+  CONFIRMED: {
+    label: "ยืนยันแล้ว",
+    color: "bg-emerald-50 text-emerald-700 border-emerald-200/50",
+    icon: CheckCircle,
+  },
+  PENDING: {
+    label: "รอดำเนินการ",
+    color: "bg-amber-50 text-amber-700 border-amber-200/50",
+    icon: Clock,
+  },
+  COMPLETED: {
+    label: "เสร็จสิ้น",
+    color: "bg-blue-50 text-blue-700 border-blue-200/50",
+    icon: CheckCircle,
+  },
+  CANCELLED: {
+    label: "ยกเลิก",
+    color: "bg-rose-50 text-rose-700 border-rose-200/50",
+    icon: XCircle,
+  },
 };
 
 const paymentConfig: Record<string, { label: string; color: string }> = {
-    SUCCESS: { label: "ชำระแล้ว", color: "bg-green-100 text-green-700" },
-    PENDING: { label: "รอชำระ", color: "bg-yellow-100 text-yellow-700" },
-    CANCEL: { label: "ยกเลิก", color: "bg-red-100 text-red-700" },
+  SUCCESS: { label: "ชำระแล้ว", color: "bg-emerald-100 text-emerald-700" },
+  PENDING: { label: "รอชำระ", color: "bg-amber-100 text-amber-700" },
+  CANCEL: { label: "ยกเลิก", color: "bg-rose-100 text-rose-700" },
 };
 
 export default function MySpaceClient({ bookings }: MySpaceClientProps) {
-    const [paymentBooking, setPaymentBooking] = useState<Booking | null>(null);
-    const [cancellingId, setCancellingId] = useState<string | null>(null);
-    const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
-    const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
-    const router = useRouter();
+  const [paymentBooking, setPaymentBooking] = useState<Booking | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+  const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
+  const router = useRouter();
 
-    const cancelBooking = api.booking.cancelBooking.useMutation({
-        onSuccess: () => {
-            toast.success("ยกเลิกการจองเรียบร้อยแล้ว");
-            setCancellingId(null);
-            setConfirmCancelId(null);
-            router.refresh();
-        },
-        onError: (err) => {
-            toast.error(err.message ?? "ไม่สามารถยกเลิกการจองได้");
-            setCancellingId(null);
-            setConfirmCancelId(null);
-        },
-    });
+  const cancelBooking = api.booking.cancelBooking.useMutation({
+    onSuccess: () => {
+      toast.success("ยกเลิกการจองเรียบร้อยแล้ว");
+      setCancellingId(null);
+      setConfirmCancelId(null);
+      router.refresh();
+    },
+    onError: (err) => {
+      toast.error(err.message ?? "ไม่สามารถยกเลิกการจองได้");
+      setCancellingId(null);
+      setConfirmCancelId(null);
+    },
+  });
 
-    function handleCancel(bookingId: string) {
-        setCancellingId(bookingId);
-        cancelBooking.mutate({ booking_id: bookingId });
-    }
+  function handleCancel(bookingId: string) {
+    setCancellingId(bookingId);
+    cancelBooking.mutate({ booking_id: bookingId });
+  }
 
-    return (
-        <div className="min-h-screen bg-gray-50 pt-24 pb-16">
-            <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">พื้นที่ของฉัน</h1>
-                    <p className="mt-1 text-gray-500">
-                        รายการจองพื้นที่ทั้งหมดของคุณ
-                    </p>
-                </div>
-
-                {bookings.length === 0 ? (
-                    <div className="rounded-3xl bg-white p-16 text-center shadow-sm ring-1 ring-gray-100">
-                        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-orange-100">
-                            <ShoppingBag size={36} className="text-orange-500" />
-                        </div>
-                        <h2 className="mb-2 text-xl font-bold text-gray-900">
-                            ยังไม่มีการจอง
-                        </h2>
-                        <p className="mb-6 text-sm text-gray-500">
-                            เริ่มจองพื้นที่ขายของคุณได้เลย!
-                        </p>
-                        <Link
-                            href="/customer#booths"
-                            className="inline-flex items-center gap-2 rounded-full bg-orange-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-700"
-                        >
-                            ดูพื้นที่ว่าง
-                            <ArrowRight size={16} />
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {bookings.map((booking) => {
-                            const FALLBACK_STATUS = statusConfig.PENDING!;
-                            const FALLBACK_PAYMENT = paymentConfig.PENDING!;
-                            const status =
-                                statusConfig[booking.booking_status] ?? FALLBACK_STATUS;
-                            const payment =
-                                paymentConfig[booking.payment_status] ?? FALLBACK_PAYMENT;
-                            const StatusIcon = status.icon;
-                            const boothImage =
-                                booking.booth.images?.[0]?.path ?? "/placeholder-image.jpg";
-
-                            const startDate = new Date(
-                                booking.start_date,
-                            ).toLocaleDateString("th-TH", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                            });
-                            const endDate = new Date(booking.end_date).toLocaleDateString(
-                                "th-TH",
-                                { day: "numeric", month: "short", year: "numeric" },
-                            );
-
-                            const isPending = booking.booking_status === "PENDING";
-                            const canReview = booking.booking_status === "COMPLETED" || booking.booking_status === "CONFIRMED";
-                            const needsPayment = booking.payment_status === "PENDING";
-                            const isCancelling = cancellingId === booking.id;
-
-                            return (
-                                <div
-                                    key={booking.id}
-                                    className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-md"
-                                >
-                                    <div className="flex flex-col sm:flex-row">
-                                        {/* Booth Image */}
-                                        <div className="relative h-48 w-full shrink-0 sm:h-auto sm:w-48">
-                                            <Image
-                                                src={boothImage}
-                                                alt={booking.booth.name}
-                                                fill
-                                                unoptimized
-                                                className="object-cover"
-                                            />
-                                        </div>
-
-                                        {/* Content */}
-                                        <div className="flex flex-1 flex-col justify-between p-5">
-                                            <div>
-                                                <div className="mb-3 flex flex-wrap items-center gap-2">
-                                                    <span
-                                                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${status.color}`}
-                                                    >
-                                                        <StatusIcon size={12} />
-                                                        {status.label}
-                                                    </span>
-                                                    <span
-                                                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${payment.color}`}
-                                                    >
-                                                        {payment.label}
-                                                    </span>
-                                                </div>
-
-                                                <h3 className="mb-2 text-lg font-bold text-gray-900">
-                                                    {booking.booth.name}
-                                                </h3>
-
-                                                <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Calendar size={14} className="text-orange-500" />
-                                                        {startDate} — {endDate}
-                                                    </div>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <MapPin size={14} className="text-blue-500" />
-                                                        ตลาด Ozone One
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-4">
-                                                <div>
-                                                    <p className="text-xs text-gray-400">ยอดรวม</p>
-                                                    <p className="text-xl font-bold text-gray-900">
-                                                        ฿{booking.total_price.toLocaleString()}
-                                                    </p>
-                                                </div>
-
-                                                <div className="flex items-center gap-2">
-                                                    {/* ดูสลิป */}
-                                                    {booking.payment_slip_url && (
-                                                        <a
-                                                            href={booking.payment_slip_url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 transition-all hover:border-orange-300 hover:text-orange-600"
-                                                        >
-                                                            ดูสลิป
-                                                        </a>
-                                                    )}
-
-                                                    {/* ปุ่มชำระเงิน — สำหรับ booking ที่รอดำเนินการ / รอชำระ */}
-                                                    {isPending && needsPayment && (
-                                                        <button
-                                                            onClick={() => setPaymentBooking(booking)}
-                                                            className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-green-700"
-                                                        >
-                                                            <CreditCard size={14} />
-                                                            ชำระเงิน
-                                                        </button>
-                                                    )}
-
-                                                    {/* ปุ่มรีวิว — สำหรับ booking ที่ confirmed/completed */}
-                                                    {canReview && (
-                                                        <button
-                                                            onClick={() => setReviewBooking(booking)}
-                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700 transition-all hover:bg-amber-100"
-                                                        >
-                                                            <MessageSquare size={14} />
-                                                            รีวิว
-                                                        </button>
-                                                    )}
-
-                                                    {/* ปุ่มยกเลิก — สำหรับ booking ที่ PENDING */}
-                                                    {isPending && (
-                                                        confirmCancelId === booking.id ? (
-                                                            <div className="flex items-center gap-1">
-                                                                <button
-                                                                    onClick={() => handleCancel(booking.id)}
-                                                                    disabled={isCancelling}
-                                                                    className="rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
-                                                                >
-                                                                    {isCancelling ? "กำลังยกเลิก..." : "ยืนยัน?"}
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setConfirmCancelId(null)}
-                                                                    className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100"
-                                                                >
-                                                                    ไม่
-                                                                </button>
-                                                            </div>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() => setConfirmCancelId(booking.id)}
-                                                                className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition-all hover:bg-red-100"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                                ยกเลิก
-                                                            </button>
-                                                        )
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
-
-            {/* Payment Modal */}
-            {paymentBooking && (
-                <PaymentModal
-                    booking={paymentBooking}
-                    onClose={() => setPaymentBooking(null)}
-                    onSuccess={() => setPaymentBooking(null)}
-                />
-            )}
-
-            {/* Write Review Modal */}
-            {reviewBooking && (
-                <WriteReviewModal
-                    boothId={reviewBooking.booth.id}
-                    boothName={reviewBooking.booth.name}
-                    onClose={() => setReviewBooking(null)}
-                />
-            )}
+  return (
+    <div className="min-h-screen bg-[#FAFAFA] pt-32 pb-24">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-12 flex items-center gap-6">
+          <div className="flex h-16 w-16 items-center justify-center rounded-4xl bg-orange-500 text-white shadow-lg shadow-orange-200 transition-transform hover:rotate-3">
+            <ShoppingBag size={32} />
+          </div>
+          <div>
+            <h1 className="text-4xl font-black tracking-tight text-slate-900">
+              พื้นที่ของฉัน
+            </h1>
+            <p className="mt-1 font-medium text-slate-500">
+              จัดการรายการจองพื้นที่ Ozone One Market ทั้งหมดของคุณ
+            </p>
+          </div>
         </div>
-    );
+
+        {bookings.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-[3rem] border border-slate-100 bg-white p-20 text-center shadow-sm">
+            <div className="relative mb-8">
+              <div className="absolute inset-0 animate-ping rounded-full bg-orange-100 opacity-20" />
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-orange-50">
+                <ShoppingBag size={48} className="text-orange-500" />
+              </div>
+            </div>
+            <h2 className="mb-3 text-2xl font-black text-slate-900">
+              ยังไม่มีการจอง
+            </h2>
+            <p className="mb-10 max-w-xs text-slate-500">
+              ดูพื้นที่ว่างในตลาดแล้วเริ่มจองพื้นที่ขายของคุณได้เลยวันนี้
+            </p>
+            <Link
+              href="/customer#booths"
+              className="group flex items-center gap-2 rounded-2xl bg-slate-900 px-8 py-4 font-bold text-white transition-all hover:scale-[1.02] hover:bg-orange-600 active:scale-[0.98]"
+            >
+              ดูพื้นที่ว่างที่น่าสนใจ
+              <ArrowRight
+                size={18}
+                className="transition-transform group-hover:translate-x-1"
+              />
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-6">
+            {bookings.map((booking) => {
+              const FALLBACK_STATUS = statusConfig.PENDING!;
+              const FALLBACK_PAYMENT = paymentConfig.PENDING!;
+              const status =
+                statusConfig[booking.booking_status] ?? FALLBACK_STATUS;
+              const payment =
+                paymentConfig[booking.payment_status] ?? FALLBACK_PAYMENT;
+              const StatusIcon = status.icon;
+              const boothImage =
+                booking.booth.images?.[0]?.path ?? "/placeholder-image.jpg";
+
+              const startDate = new Date(booking.start_date).toLocaleDateString(
+                "th-TH",
+                {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                },
+              );
+              const endDate = new Date(booking.end_date).toLocaleDateString(
+                "th-TH",
+                { day: "numeric", month: "short", year: "numeric" },
+              );
+
+              const isPending = booking.booking_status === "PENDING";
+              const canReview =
+                booking.booking_status === "COMPLETED" ||
+                booking.booking_status === "CONFIRMED";
+              const needsPayment = booking.payment_status === "PENDING";
+              const isCancelling = cancellingId === booking.id;
+
+              return (
+                <div
+                  key={booking.id}
+                  className="group relative overflow-hidden rounded-[2.5rem] border border-slate-100 bg-white/70 shadow-sm ring-1 ring-slate-900/5 backdrop-blur-xl transition-all hover:scale-[1.01] hover:shadow-xl hover:shadow-slate-200/50"
+                >
+                  <div className="flex flex-col lg:flex-row">
+                    {/* Booth Image */}
+                    <div className="relative h-64 w-full shrink-0 overflow-hidden lg:h-auto lg:w-64">
+                      <Image
+                        src={boothImage}
+                        alt={booking.booth.name}
+                        fill
+                        unoptimized
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-linear-to-t from-slate-900/40 to-transparent lg:hidden" />
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="flex flex-1 flex-col justify-between p-8">
+                      <div>
+                        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex flex-wrap gap-2">
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-black tracking-wider uppercase ${status.color}`}
+                            >
+                              <StatusIcon size={12} />
+                              {status.label}
+                            </span>
+                            <span
+                              className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-black tracking-wider uppercase ${payment.color}`}
+                            >
+                              {payment.label}
+                            </span>
+                          </div>
+                          <span className="text-xs font-bold text-slate-400">
+                            Booking ID: {booking.id.slice(0, 8).toUpperCase()}
+                          </span>
+                        </div>
+
+                        <h3 className="mb-4 text-2xl font-black tracking-tight text-slate-900">
+                          {booking.booth.name}
+                        </h3>
+
+                        <div className="grid gap-4 sm:flex sm:items-center sm:gap-8">
+                          <div className="flex items-center gap-3 rounded-2xl bg-amber-50/50 px-4 py-2 ring-1 ring-amber-100/50">
+                            <Calendar size={16} className="text-amber-600" />
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold text-amber-600/60 uppercase">
+                                เช่าช่วงวันที่
+                              </span>
+                              <span className="text-sm font-bold text-amber-900">
+                                {startDate} — {endDate}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 rounded-2xl bg-blue-50/50 px-4 py-2 ring-1 ring-blue-100/50">
+                            <MapPin size={16} className="text-blue-600" />
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold text-blue-600/60 uppercase">
+                                สถานที่
+                              </span>
+                              <span className="text-sm font-bold text-blue-900">
+                                Ozone One Market
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-8 flex flex-col items-center justify-between gap-6 border-t border-slate-100 pt-8 sm:flex-row">
+                        <div>
+                          <p className="text-xs font-bold tracking-widest text-slate-400 uppercase">
+                            ยอดชำระสุทธิ
+                          </p>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-3xl font-black tracking-tighter text-slate-900">
+                              ฿{booking.total_price.toLocaleString()}
+                            </span>
+                            <span className="text-sm font-bold text-slate-400">
+                              บาท
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
+                          {booking.payment_slip_url && (
+                            <a
+                              href={booking.payment_slip_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition-all hover:border-orange-200 hover:text-orange-600"
+                            >
+                              ดูหลักฐานการโอน
+                            </a>
+                          )}
+
+                          {isPending && needsPayment && (
+                            <button
+                              onClick={() => setPaymentBooking(booking)}
+                              className="flex h-11 items-center gap-2 rounded-xl bg-emerald-600 px-6 text-sm font-bold text-white shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-700 active:scale-95"
+                            >
+                              <CreditCard size={18} />
+                              ชำระเงินตอนนี้
+                            </button>
+                          )}
+
+                          {canReview && (
+                            <button
+                              onClick={() => setReviewBooking(booking)}
+                              className="flex h-11 items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-6 text-sm font-bold text-orange-700 transition-all hover:bg-orange-100 active:scale-95"
+                            >
+                              <MessageSquare size={18} />
+                              เขียนรีวิว
+                            </button>
+                          )}
+
+                          {isPending &&
+                            (confirmCancelId === booking.id ? (
+                              <div className="animate-in fade-in zoom-in flex items-center gap-2 duration-300">
+                                <button
+                                  onClick={() => handleCancel(booking.id)}
+                                  disabled={isCancelling}
+                                  className="flex h-11 items-center rounded-xl bg-rose-600 px-5 text-sm font-bold text-white transition-all hover:bg-rose-700 disabled:opacity-50"
+                                >
+                                  {isCancelling
+                                    ? "กำลังยกเลิก..."
+                                    : "ยืนยันยกเลิก"}
+                                </button>
+                                <button
+                                  onClick={() => setConfirmCancelId(null)}
+                                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition-all hover:bg-slate-50"
+                                >
+                                  <XCircle size={20} />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmCancelId(booking.id)}
+                                className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-slate-400 transition-all hover:bg-rose-50 hover:text-rose-600"
+                                title="ยกเลิกการจอง"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Modals */}
+      {paymentBooking && (
+        <PaymentModal
+          booking={paymentBooking}
+          onClose={() => setPaymentBooking(null)}
+          onSuccess={() => setPaymentBooking(null)}
+        />
+      )}
+
+      {reviewBooking && (
+        <WriteReviewModal
+          boothId={reviewBooking.booth.id}
+          boothName={reviewBooking.booth.name}
+          onClose={() => setReviewBooking(null)}
+        />
+      )}
+    </div>
+  );
 }
