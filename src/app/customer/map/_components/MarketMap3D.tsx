@@ -32,6 +32,7 @@ interface BoothMapData {
   name: string;
   price: number;
   is_available: boolean;
+  isCurrentlyBooked?: boolean;
   dimension: string;
   position_x: number | null;
   position_y: number | null;
@@ -69,10 +70,15 @@ function BoothMesh({
   const sc = booth.scale ?? 1;
   const ry = booth.rotation_y ?? 0;
 
-  // Derive colour from zone's color_code or availability
-  const zoneColor = booth.zone?.color_code
+  // Derive colour: grey=closed, red=booked today, zone/orange=available
+  const baseColor = !booth.is_available
+    ? new THREE.Color("#94a3b8")
+    : booth.isCurrentlyBooked
+    ? new THREE.Color("#ef4444")
+    : booth.zone?.color_code
     ? new THREE.Color(booth.zone.color_code)
-    : new THREE.Color(booth.is_available ? "#f97316" : "#ef4444");
+    : new THREE.Color("#f97316");
+  const zoneColor = baseColor;
 
   const selectedColor = new THREE.Color("#fbbf24");
   const hoveredColor = zoneColor.clone().lerp(new THREE.Color("#ffffff"), 0.3);
@@ -138,7 +144,13 @@ function BoothMesh({
       <mesh position={[0, py + 0.3 * sc, 0.91 * sc]} scale={[sc, sc, sc]}>
         <boxGeometry args={[0.4, 0.6, 0.05]} />
         <meshStandardMaterial
-          color={booth.is_available ? "#4ade80" : "#f87171"}
+          color={
+            !booth.is_available
+              ? "#94a3b8"
+              : booth.isCurrentlyBooked
+              ? "#f87171"
+              : "#4ade80"
+          }
           roughness={0.5}
         />
       </mesh>
@@ -370,11 +382,15 @@ export default function MarketMap3D({ booths }: MarketMap3DProps) {
         <div className="flex flex-col gap-1.5">
           <span className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-sm bg-green-500 inline-block" />
-            ประตูเขียว = ว่าง
+            ประตูเขียว = ว่างอยู่
           </span>
           <span className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-sm bg-red-400 inline-block" />
-            ประตูแดง = เต็ม
+            ประตูแดง = จองวันนี้แล้ว (วันอื่นอาจว่าง)
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-sm bg-slate-400 inline-block" />
+            ประตูเทา = ปิดชั่วคราว
           </span>
           <span className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-sm bg-yellow-400 inline-block" />
@@ -443,12 +459,18 @@ export default function MarketMap3D({ booths }: MarketMap3DProps) {
               {/* Status */}
               <span
                 className={`absolute top-3 right-3 rounded-full px-2.5 py-1 text-xs font-bold ${
-                  selectedBooth.is_available
-                    ? "bg-green-400/90 text-white"
-                    : "bg-red-400/90 text-white"
+                  !selectedBooth.is_available
+                    ? "bg-slate-400/90 text-white"
+                    : selectedBooth.isCurrentlyBooked
+                    ? "bg-amber-400/90 text-white"
+                    : "bg-green-400/90 text-white"
                 }`}
               >
-                {selectedBooth.is_available ? "ว่าง" : "เต็ม"}
+                {!selectedBooth.is_available
+                  ? "ปิดชั่วคราว"
+                  : selectedBooth.isCurrentlyBooked
+                  ? "วันนี้ถูกจองแล้ว"
+                  : "ว่างอยู่"}
               </span>
               <button
                 onClick={(e) => {
@@ -507,8 +529,15 @@ export default function MarketMap3D({ booths }: MarketMap3DProps) {
                 href={`/customer/booths/${selectedBooth.id}`}
                 className="block w-full rounded-xl bg-orange-500 py-2.5 text-center text-sm font-bold text-white transition hover:bg-orange-600"
               >
-                ดูรายละเอียด / จอง
+                {selectedBooth.isCurrentlyBooked
+                  ? "ดูวันว่างที่เหลือ"
+                  : "ดูรายละเอียด / จอง"}
               </Link>
+              {selectedBooth.isCurrentlyBooked && selectedBooth.is_available && (
+                <p className="mt-2 text-center text-[10px] text-amber-300/80">
+                  วันอื่นอาจยังว่างอยู่ กดเพื่อดูตารางการจอง
+                </p>
+              )}
             </div>
           </div>
         </div>

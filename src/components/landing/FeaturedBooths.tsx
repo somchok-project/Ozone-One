@@ -121,14 +121,32 @@ export default async function FeaturedBooths({
 
                   {/* Status Badge */}
                   <div className="absolute top-6 right-6 z-10">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-4 py-2 text-xs font-bold tracking-wider uppercase shadow-sm backdrop-blur-md ${booth.is_available ? "border-green-200/30 bg-green-500/10 text-green-600" : "border-red-200/30 bg-red-500/10 text-red-600"}`}
-                    >
+                    {booth.isCurrentlyBooked && booth.is_available ? (
+                      <span className="flex flex-col items-start rounded-2xl border border-amber-200/40 bg-amber-500/10 px-3 py-2 shadow-sm backdrop-blur-md">
+                        <span className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
+                          <span className="block h-1.5 w-1.5 rounded-full bg-amber-500" />
+                          วันนี้ถูกจองแล้ว
+                        </span>
+                        <span className="mt-0.5 text-[10px] font-medium text-amber-600/80">
+                          วันอื่นอาจว่าง • กดดูก่อนได้
+                        </span>
+                      </span>
+                    ) : (
                       <span
-                        className={`mr-2 block h-1.5 w-1.5 rounded-full ${booth.is_available ? "animate-pulse bg-green-500" : "bg-red-500"}`}
-                      ></span>
-                      {booth.is_available ? "ว่าง" : "ถูกจองแล้ว"}
-                    </span>
+                        className={`inline-flex items-center rounded-full border px-4 py-2 text-xs font-bold tracking-wider uppercase shadow-sm backdrop-blur-md ${
+                          !booth.is_available
+                            ? "border-slate-200/30 bg-slate-500/10 text-slate-500"
+                            : "border-green-200/30 bg-green-500/10 text-green-600"
+                        }`}
+                      >
+                        <span
+                          className={`mr-2 block h-1.5 w-1.5 rounded-full ${
+                            !booth.is_available ? "bg-slate-400" : "animate-pulse bg-green-500"
+                          }`}
+                        ></span>
+                        {!booth.is_available ? "ปิดชั่วคราว" : "ว่างอยู่"}
+                      </span>
+                    )}
                   </div>
 
                   {/* Zone Badge */}
@@ -186,10 +204,14 @@ export default async function FeaturedBooths({
 
                     <Link
                       href={`/customer/booths/${booth.id}`}
-                      className={`group/btn relative overflow-hidden rounded-2xl px-8 py-4 text-sm font-black transition-all duration-500 ${booth.is_available ? "bg-orange-600 text-white hover:bg-orange-600 hover:shadow-[0_10px_30px_rgba(249,115,22,0.3)]" : "cursor-not-allowed bg-gray-100 text-gray-400"}`}
+                      className={`group/btn relative overflow-hidden rounded-2xl px-8 py-4 text-sm font-black transition-all duration-500 ${
+                        !booth.is_available
+                          ? "cursor-not-allowed bg-gray-100 text-gray-400"
+                          : "bg-orange-600 text-white hover:bg-orange-600 hover:shadow-[0_10px_30px_rgba(249,115,22,0.3)]"
+                      }`}
                     >
                       <span className="relative z-10 flex items-center gap-2">
-                        {booth.is_available ? "จองเลย" : "เต็มแล้ว"}
+                        {!booth.is_available ? "ปิดชั่วคราว" : booth.isCurrentlyBooked ? "จองวันอื่น" : "จองเลย"}
                         <ArrowRight
                           size={18}
                           className="transition-transform duration-500 group-hover/btn:translate-x-1.5"

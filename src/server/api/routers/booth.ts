@@ -5,7 +5,8 @@ export const boothRouter = createTRPCRouter({
   getAll: publicProcedure
     .input(z.object({ zoneId: z.string().optional() }).optional())
     .query(async ({ ctx, input }) => {
-      return ctx.db.booth.findMany({
+      const now = new Date();
+      const booths = await ctx.db.booth.findMany({
         where: {
           is_available: true,
           ...(input?.zoneId && input.zoneId !== "all"
@@ -19,9 +20,23 @@ export const boothRouter = createTRPCRouter({
             include: { user: { select: { name: true, image: true } } },
           },
           _count: { select: { bookings: true, reviews: true } },
+          // Include currently active bookings to compute isCurrentlyBooked
+          bookings: {
+            where: {
+              booking_status: { in: ["CONFIRMED", "PENDING"] },
+              start_date: { lte: now },
+              end_date: { gte: now },
+            },
+            select: { id: true },
+          },
         },
         orderBy: { created_at: "desc" },
       });
+
+      return booths.map((b) => ({
+        ...b,
+        isCurrentlyBooked: b.bookings.length > 0,
+      }));
     }),
 
   getZones: publicProcedure.query(async ({ ctx }) => {
@@ -59,7 +74,8 @@ export const boothRouter = createTRPCRouter({
 
   /** Get all booths with 3D position data for the interactive map */
   getMapData: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.booth.findMany({
+    const now = new Date();
+    const booths = await ctx.db.booth.findMany({
       select: {
         id: true,
         name: true,
@@ -77,9 +93,22 @@ export const boothRouter = createTRPCRouter({
         zone: { select: { id: true, name: true, color_code: true } },
         images: { take: 1, select: { path: true } },
         _count: { select: { reviews: true } },
+        bookings: {
+          where: {
+            booking_status: { in: ["CONFIRMED", "PENDING"] },
+            start_date: { lte: now },
+            end_date: { gte: now },
+          },
+          select: { id: true },
+        },
       },
       orderBy: { created_at: "asc" },
     });
+
+    return booths.map((b) => ({
+      ...b,
+      isCurrentlyBooked: b.bookings.length > 0,
+    }));
   }),
 
   getStats: publicProcedure.query(async ({ ctx }) => {

@@ -13,8 +13,9 @@ interface BoothFiltersProps {
 
 const statusOptions: FilterSelectOption[] = [
     { label: "ทั้งหมด", value: "all" },
-    { label: "ว่าง", value: "available" },
-    { label: "ถูกจอง", value: "occupied" }
+    { label: "ว่างอยู่", value: "available" },
+    { label: "ถูกจองอยู่", value: "occupied" },
+    { label: "ปิดชั่วคราว", value: "closed" },
 ];
 
 export function BoothFilters({ query, statusFilter }: BoothFiltersProps) {

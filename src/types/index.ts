@@ -100,6 +100,7 @@ export interface Booth {
     bookings: number;
     reviews: number;
   };
+  isCurrentlyBooked?: boolean;
 }
 
 export interface Image {

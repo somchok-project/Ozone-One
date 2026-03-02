@@ -68,13 +68,19 @@ export function BoothTable({ booths }: BoothTableProps) {
                                     {formatCurrency(booth.price)}
                                 </td>
                                 <td className="px-6 py-6">
-                                    <span className={`inline-flex items-center justify-center rounded-3xl px-4 py-1.5 text-[13px] font-bold w-[90px] ${
-                                        booth.is_available 
-                                            ? "bg-[#C1FBE2] text-green-800" 
-                                            : "bg-[#FFD1D1] text-red-800"
-                                    }`}>
-                                        {booth.is_available ? "ว่างอยู่" : "ถูกจองอยู่"}
-                                    </span>
+                                    {!booth.is_available ? (
+                                        <span className="inline-flex items-center justify-center rounded-3xl px-4 py-1.5 text-[13px] font-bold w-[110px] bg-slate-100 text-slate-500">
+                                            ปิดชั่วคราว
+                                        </span>
+                                    ) : booth.hasActiveBooking ? (
+                                        <span className="inline-flex items-center justify-center rounded-3xl px-4 py-1.5 text-[13px] font-bold w-[110px] bg-[#FFD1D1] text-red-800">
+                                            ถูกจองอยู่
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center justify-center rounded-3xl px-4 py-1.5 text-[13px] font-bold w-[110px] bg-[#C1FBE2] text-green-800">
+                                            ว่างอยู่
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="px-8 py-6">
                                     <BoothActions boothId={booth.id} />

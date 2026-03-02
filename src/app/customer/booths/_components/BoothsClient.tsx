@@ -203,8 +203,23 @@ export default function BoothsClient({
                   />
 
                   {/* Floating Overlay Top */}
-                  <div className="absolute top-3 right-3 left-3 flex items-start justify-end">
-         
+                  <div className="absolute top-3 right-3 left-3 flex items-start justify-between">
+                    {/* Booking status badge */}
+                    {booth.isCurrentlyBooked ? (
+                      <span className="flex flex-col rounded-xl bg-amber-500/90 px-2.5 py-1.5 shadow-sm backdrop-blur-sm">
+                        <span className="text-[11px] font-bold leading-tight text-white">
+                          วันนี้ถูกจองแล้ว
+                        </span>
+                        <span className="text-[9px] font-medium leading-tight text-amber-100">
+                          วันอื่นอาจว่าง • กดดูได้เลย
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 rounded-full bg-green-500/90 px-2.5 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-sm">
+                        ว่างอยู่
+                      </span>
+                    )}
+
                     {/* Zone Badge */}
                     {booth.zone && (
                       <span className="flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm backdrop-blur-sm">

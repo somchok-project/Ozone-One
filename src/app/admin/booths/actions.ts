@@ -42,6 +42,24 @@ async function saveBoothItems(boothId: string, items: RawBoothItem[]) {
 export async function getBooths(params?: { q?: string; status?: string }) {
   const query = params?.q || "";
   const statusFilter = params?.status || "all";
+  const now = new Date();
+
+  // Active bookings = CONFIRMED or PENDING booking that covers today
+  const activeStatuses = ["CONFIRMED", "PENDING"] as const;
+  const activeTodayFilter = {
+    booking_status: { in: [...activeStatuses] },
+    start_date: { lte: now },
+    end_date: { gte: now },
+  };
+
+  let statusWhere = {};
+  if (statusFilter === "available") {
+    statusWhere = { is_available: true, bookings: { none: activeTodayFilter } };
+  } else if (statusFilter === "occupied") {
+    statusWhere = { is_available: true, bookings: { some: activeTodayFilter } };
+  } else if (statusFilter === "closed") {
+    statusWhere = { is_available: false };
+  }
 
   const booths = await db.booth.findMany({
     where: {
@@ -49,20 +67,28 @@ export async function getBooths(params?: { q?: string; status?: string }) {
         { name: { contains: query, mode: "insensitive" } },
         { dimension: { contains: query, mode: "insensitive" } },
       ],
-      ...(statusFilter !== "all"
-        ? { is_available: statusFilter === "available" }
-        : {}),
+      ...statusWhere,
     },
     include: {
       user: true,
       zone: true,
+      _count: {
+        select: {
+          // Prisma filtered count: count only active-today bookings
+          bookings: { where: activeTodayFilter },
+        },
+      },
     },
     orderBy: {
       name: "asc",
     },
   });
 
-  return booths;
+  // Flatten: expose hasActiveBooking as a top-level field
+  return booths.map((b) => ({
+    ...b,
+    hasActiveBooking: b._count.bookings > 0,
+  }));
 }
 export async function createBoothAction(formData: FormData) {
   try {
