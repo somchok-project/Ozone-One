@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import {
   ArrowLeft,
-  Calendar,
   MapPin,
   Star,
   Ruler,
@@ -19,6 +18,7 @@ import Link from "next/link";
 import BookingModal from "./BookingModal";
 import WriteReviewModal from "./WriteReviewModal";
 import Image from "next/image";
+import BookingCalendar from "./BookingCalendar";
 import { formatCurrency, formatThaiDate } from "@/lib/utils/format";
 import { getLabelReviewType } from "@/lib/utils/label";
 import { type Review } from "@/types";
@@ -72,7 +72,6 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
   }, [startDate, endDate]);
 
   const totalPrice = days * booth.price;
-  const today = new Date().toISOString().split("T")[0];
 
   // Google Maps embed URL
   const mapUrl = useMemo(() => {
@@ -397,7 +396,7 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
                             }`}
                           >
                             {getLabelReviewType(
-                              review as any as Parameters<
+                              review as unknown as Parameters<
                                 typeof getLabelReviewType
                               >[0],
                             )}
@@ -430,38 +429,16 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
               เลือกวันที่ต้องการเช่าพื้นที่
             </p>
 
-            <div className="mb-4 space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  <Calendar size={14} className="mr-1 inline" />
-                  วันเริ่มต้น
-                </label>
-                <input
-                  type="date"
-                  min={today}
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    if (endDate && e.target.value > endDate) {
-                      setEndDate("");
-                    }
-                  }}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition-all outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  <Calendar size={14} className="mr-1 inline" />
-                  วันสิ้นสุด
-                </label>
-                <input
-                  type="date"
-                  min={startDate || today}
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition-all outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
-                />
-              </div>
+            <div className="mb-6">
+              <BookingCalendar
+                bookings={booth.bookings}
+                selectedStart={startDate}
+                selectedEnd={endDate}
+                onSelectRange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                }}
+              />
             </div>
 
             {/* Price summary */}
