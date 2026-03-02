@@ -1,3 +1,0 @@
-# ignore uploaded slips
-public/uploads/slips/*
-!public/uploads/slips/.gitkeep

@@ -100,7 +100,6 @@ export function BookingTable({ bookings, totalPages, currentPage }: BookingTable
                                             <BookingActions
                                                 bookingId={booking.id}
                                                 bookingStatus={booking.booking_status}
-                                                paymentStatus={booking.payment_status}
                                             />
                                         </div>
                                     </TableCell>

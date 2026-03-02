@@ -1,5 +1,8 @@
 import type { BoothSize } from "@/constants/boothItems";
 
+/** Ozone One Market center coordinates (Don Mueang, Bangkok) */
+export const OZONE_CENTER: [number, number] = [13.9291479, 100.5769372];
+
 /**
  * Parse a dimension string like "3x3 m", "4×6", "5*4" into { w, d }.
  * Falls back to 3×3 if the string cannot be parsed.

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
     Calendar,
     MapPin,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { api } from "@/trpc/react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import PaymentModal from "./PaymentModal";
 import WriteReviewModal from "./WriteReviewModal";
 
@@ -80,12 +82,13 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
 
     const cancelBooking = api.booking.cancelBooking.useMutation({
         onSuccess: () => {
+            toast.success("ยกเลิกการจองเรียบร้อยแล้ว");
             setCancellingId(null);
             setConfirmCancelId(null);
             router.refresh();
         },
         onError: (err) => {
-            alert(err.message);
+            toast.error(err.message ?? "ไม่สามารถยกเลิกการจองได้");
             setCancellingId(null);
             setConfirmCancelId(null);
         },
@@ -129,13 +132,15 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
                 ) : (
                     <div className="space-y-4">
                         {bookings.map((booking) => {
+                            const FALLBACK_STATUS = statusConfig.PENDING!;
+                            const FALLBACK_PAYMENT = paymentConfig.PENDING!;
                             const status =
-                                statusConfig[booking.booking_status] ?? statusConfig.PENDING!;
+                                statusConfig[booking.booking_status] ?? FALLBACK_STATUS;
                             const payment =
-                                paymentConfig[booking.payment_status] ?? paymentConfig.PENDING!;
-                            const StatusIcon = status!.icon;
+                                paymentConfig[booking.payment_status] ?? FALLBACK_PAYMENT;
+                            const StatusIcon = status.icon;
                             const boothImage =
-                                booking.booth.images?.[0]?.path || "/placeholder-image.jpg";
+                                booking.booth.images?.[0]?.path ?? "/placeholder-image.jpg";
 
                             const startDate = new Date(
                                 booking.start_date,
@@ -150,7 +155,7 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
                             );
 
                             const isPending = booking.booking_status === "PENDING";
-                            const isCompleted = booking.booking_status === "COMPLETED" || booking.booking_status === "CONFIRMED";
+                            const canReview = booking.booking_status === "COMPLETED" || booking.booking_status === "CONFIRMED";
                             const needsPayment = booking.payment_status === "PENDING";
                             const isCancelling = cancellingId === booking.id;
 
@@ -161,11 +166,13 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
                                 >
                                     <div className="flex flex-col sm:flex-row">
                                         {/* Booth Image */}
-                                        <div className="relative h-48 w-full flex-shrink-0 sm:h-auto sm:w-48">
-                                            <img
+                                        <div className="relative h-48 w-full shrink-0 sm:h-auto sm:w-48">
+                                            <Image
                                                 src={boothImage}
                                                 alt={booking.booth.name}
-                                                className="h-full w-full object-cover"
+                                                fill
+                                                unoptimized
+                                                className="object-cover"
                                             />
                                         </div>
 
@@ -174,15 +181,15 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
                                             <div>
                                                 <div className="mb-3 flex flex-wrap items-center gap-2">
                                                     <span
-                                                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${status!.color}`}
+                                                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${status.color}`}
                                                     >
                                                         <StatusIcon size={12} />
-                                                        {status!.label}
+                                                        {status.label}
                                                     </span>
                                                     <span
-                                                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${payment!.color}`}
+                                                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${payment.color}`}
                                                     >
-                                                        {payment!.label}
+                                                        {payment.label}
                                                     </span>
                                                 </div>
 
@@ -235,7 +242,7 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
                                                     )}
 
                                                     {/* ปุ่มรีวิว — สำหรับ booking ที่ confirmed/completed */}
-                                                    {isCompleted && (
+                                                    {canReview && (
                                                         <button
                                                             onClick={() => setReviewBooking(booking)}
                                                             className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700 transition-all hover:bg-amber-100"

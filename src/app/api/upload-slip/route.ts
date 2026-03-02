@@ -1,18 +1,113 @@
-import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
+import { uploadToMinio } from "@/lib/minio";
 
-/** Send a LINE push message via LINE Messaging API */
-async function sendLineNotification(message: string) {
+interface PaymentNotificationData {
+    customerName: string;
+    boothName: string;
+    amount: number;
+    bookingId: string;
+}
+
+/** Send a LINE Flex Message — minimal receipt card style */
+async function sendPaymentFlexMessage(data: PaymentNotificationData): Promise<void> {
     const channelToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-    const userId = process.env.LINE_ADMIN_USER_ID; // or LINE_GROUP_ID
+    const userId = process.env.LINE_ADMIN_USER_ID;
+    const adminUrl = process.env.NEXTAUTH_URL
+        ? `${process.env.NEXTAUTH_URL}/admin/bookings`
+        : "https://your-domain.com/admin/bookings";
 
-    if (!channelToken || !userId) return;
+    if (!channelToken || !userId) {
+        console.warn("LINE env vars not configured — skipping notification");
+        return;
+    }
+
+    const flexMessage = {
+        type: "flex",
+        altText: `✅ ยืนยันการชำระเงิน: ฿${data.amount.toLocaleString()}`,
+        contents: {
+            type: "bubble",
+            size: "kilo",
+            body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                    {
+                        type: "text",
+                        text: "Payment Confirmed",
+                        weight: "bold",
+                        color: "#1DB446",
+                        size: "sm",
+                    },
+                    {
+                        type: "text",
+                        text: `฿${data.amount.toLocaleString()}`,
+                        weight: "bold",
+                        size: "xxl",
+                        margin: "md",
+                    },
+                    {
+                        type: "separator",
+                        margin: "xxl",
+                    },
+                    {
+                        type: "box",
+                        layout: "vertical",
+                        margin: "xxl",
+                        spacing: "sm",
+                        contents: [
+                            {
+                                type: "box",
+                                layout: "horizontal",
+                                contents: [
+                                    { type: "text", text: "Customer", size: "sm", color: "#aaaaaa", flex: 1 },
+                                    { type: "text", text: data.customerName, size: "sm", color: "#333333", flex: 2, align: "end", wrap: true },
+                                ],
+                            },
+                            {
+                                type: "box",
+                                layout: "horizontal",
+                                contents: [
+                                    { type: "text", text: "Booth", size: "sm", color: "#aaaaaa", flex: 1 },
+                                    { type: "text", text: data.boothName, size: "sm", color: "#333333", flex: 2, align: "end", wrap: true },
+                                ],
+                            },
+                            {
+                                type: "box",
+                                layout: "horizontal",
+                                contents: [
+                                    { type: "text", text: "Booking ID", size: "sm", color: "#aaaaaa", flex: 1 },
+                                    { type: "text", text: data.bookingId, size: "sm", color: "#333333", flex: 2, align: "end" },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+            footer: {
+                type: "box",
+                layout: "vertical",
+                spacing: "sm",
+                contents: [
+                    {
+                        type: "button",
+                        style: "primary",
+                        color: "#f97316",
+                        height: "sm",
+                        action: {
+                            type: "uri",
+                            label: "ดูรายละเอียดในระบบ",
+                            uri: adminUrl,
+                        },
+                    },
+                ],
+            },
+        },
+    };
 
     try {
-        await fetch("https://api.line.me/v2/bot/message/push", {
+        const res = await fetch("https://api.line.me/v2/bot/message/push", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -20,18 +115,24 @@ async function sendLineNotification(message: string) {
             },
             body: JSON.stringify({
                 to: userId,
-                messages: [{ type: "text", text: message }],
+                messages: [flexMessage],
             }),
         });
-    } catch (err) {
-        console.error("LINE notify error:", err);
+
+        if (!res.ok) {
+            const body = await res.text();
+            console.error(`LINE push failed (${res.status}):`, body);
+        }
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error("LINE Notification Network Error:", errorMessage);
     }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
         const session = await auth();
-        if (!session?.user) {
+        if (!session?.user?.id) {
             return NextResponse.json(
                 { verified: false, message: "กรุณาเข้าสู่ระบบ" },
                 { status: 401 },
@@ -68,21 +169,16 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Save file locally
+        // ── Upload to MinIO ──────────────────────────────────────────────────
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
+        const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase();
+        const objectName = `slips/${bookingId}-${Date.now()}.${ext}`;
+        const contentType = file.type || "image/jpeg";
 
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "slips");
-        await mkdir(uploadDir, { recursive: true });
+        const publicUrl = await uploadToMinio(objectName, buffer, contentType);
 
-        const ext = file.name.split(".").pop() || "jpg";
-        const fileName = `${bookingId}-${Date.now()}.${ext}`;
-        const filePath = path.join(uploadDir, fileName);
-        await writeFile(filePath, buffer);
-
-        const publicUrl = `/uploads/slips/${fileName}`;
-
-        // --- SlipOK Verification ---
+        // ── SlipOK Verification ──────────────────────────────────────────────
         const slipOkApiKey = process.env.SLIPOK_API_KEY;
         const slipOkBranchId = process.env.SLIPOK_BRANCH_ID;
 
@@ -91,92 +187,91 @@ export async function POST(request: NextRequest) {
 
         if (slipOkApiKey && slipOkBranchId) {
             try {
-                const slipFormData = new FormData();
-                slipFormData.append("files", file);
-                slipFormData.append("amount", booking.total_price.toString());
+                const slipForm = new FormData();
+                // Rebuild the File from buffer so we send the original bytes
+                const blob = new Blob([buffer], { type: contentType });
+                slipForm.append("files", blob, file.name);
+                slipForm.append("amount", booking.total_price.toString());
 
                 const response = await fetch(
                     `https://api.slipok.com/api/line/apikey/${slipOkBranchId}`,
                     {
                         method: "POST",
-                        headers: {
-                            "x-authorization": slipOkApiKey,
-                        },
-                        body: slipFormData,
+                        headers: { "x-authorization": slipOkApiKey },
+                        body: slipForm,
                     },
                 );
 
-                const result = await response.json();
+                const result = (await response.json()) as {
+                    data?: { amount?: string | number };
+                    message?: string;
+                };
 
                 if (response.ok && result.data) {
-                    const slipData = result.data;
-                    if (
-                        slipData.amount &&
-                        Number(slipData.amount) >= booking.total_price
-                    ) {
+                    const slipAmount = result.data.amount
+                        ? Number(result.data.amount)
+                        : null;
+
+                    if (slipAmount === null || slipAmount >= booking.total_price) {
                         verified = true;
                         verifyMessage = "สลิปถูกต้อง ยืนยันการชำระเงินเรียบร้อย ✅";
-                    } else if (slipData.amount) {
-                        verifyMessage = `ยอดเงินไม่ตรง: สลิป ฿${slipData.amount} / ต้องชำระ ฿${booking.total_price}`;
                     } else {
-                        verified = true;
-                        verifyMessage = "สลิปถูกต้อง ยืนยันการชำระเงินเรียบร้อย ✅";
+                        verifyMessage = `ยอดเงินไม่ตรง: สลิป ฿${slipAmount.toLocaleString()} / ต้องชำระ ฿${booking.total_price.toLocaleString()}`;
                     }
                 } else {
-                    verifyMessage =
-                        result.message || "ไม่สามารถตรวจสอบสลิปได้ กรุณาลองใหม่";
+                    verifyMessage = result.message ?? "ไม่สามารถตรวจสอบสลิปได้ กรุณาลองใหม่";
                 }
-            } catch {
+            } catch (err) {
+                const errorMessage = err instanceof Error ? err.message : String(err);
+                console.error("SlipOK error:", errorMessage);
                 verifyMessage = "เกิดข้อผิดพลาดในการตรวจสอบสลิป";
             }
         } else {
-            // No SlipOK configured — auto accept (development mode)
+            // Development mode — auto-approve
             verified = true;
-            verifyMessage = "ยืนยันการชำระเงินสำเร็จ ✅";
+            verifyMessage = "ยืนยันการชำระเงินสำเร็จ ✅ (development mode)";
         }
 
-        // Update booking
+        // ── Update DB & Send LINE Notification ───────────────────────────────
         if (verified) {
-            await db.booking.update({
+            // Optimize: Update and include related data in a single query
+            const updatedBooking = await db.booking.update({
                 where: { id: bookingId },
                 data: {
                     payment_slip_url: publicUrl,
                     payment_status: "SUCCESS",
                     booking_status: "CONFIRMED",
                 },
-            });
-
-            // Notify admin via LINE
-            const bookingWithUser = await db.booking.findUnique({
-                where: { id: bookingId },
                 include: {
                     user: { select: { name: true, email: true } },
                     booth: { select: { name: true } },
                 },
             });
-            if (bookingWithUser) {
-                const lineMsg =
-                    `✅ ยืนยันการชำระเงินแล้ว!\n` +
-                    `👤 ลูกค้า: ${bookingWithUser.user.name ?? bookingWithUser.user.email}\n` +
-                    `🏪 บูธ: ${bookingWithUser.booth.name}\n` +
-                    `💰 ยอด: ฿${bookingWithUser.total_price.toLocaleString()}\n` +
-                    `🧾 Booking ID: ${bookingId.slice(0, 8)}...`;
-                await sendLineNotification(lineMsg);
+
+            if (updatedBooking) {
+                const customerName = updatedBooking.user.name ?? updatedBooking.user.email ?? "ไม่ทราบชื่อ";
+                const boothName = updatedBooking.booth.name ?? "ไม่ระบุ";
+
+                await sendPaymentFlexMessage({
+                    customerName,
+                    boothName,
+                    amount: booking.total_price,
+                    bookingId: bookingId.slice(0, 8).toUpperCase(),
+                });
             }
         } else {
+            // Save slip URL even if not verified so admin can review manually
             await db.booking.update({
                 where: { id: bookingId },
                 data: { payment_slip_url: publicUrl },
             });
         }
 
-        return NextResponse.json({
-            verified,
-            message: verifyMessage,
-            url: publicUrl,
-        });
+        return NextResponse.json({ verified, message: verifyMessage, url: publicUrl });
     } catch (err) {
-        console.error("Upload slip error:", err);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error("Upload slip error:", errorMessage);
+        
         return NextResponse.json(
             { verified: false, message: "เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่" },
             { status: 500 },

@@ -22,7 +22,7 @@ export default async function BookingsPage(props: {
     const currentPage = Number(searchParams?.page) || 1;
 
     const whereClause: any = {
-        ...(statusFilter !== "all" ? { payment_status: statusFilter } : {}),
+        ...(statusFilter !== "all" ? { booking_status: statusFilter } : {}),
     };
 
     if (query) {
@@ -33,7 +33,7 @@ export default async function BookingsPage(props: {
         ];
     }
 
-    const [bookings, totalCount] = await Promise.all([
+    const [bookings, totalCount, pendingCount, confirmedCount, completedCount, cancelledCount] = await Promise.all([
         db.booking.findMany({
             where: whereClause,
             include: { user: true, booth: true },
@@ -41,16 +41,21 @@ export default async function BookingsPage(props: {
             skip: (currentPage - 1) * ITEMS_PER_PAGE,
             take: ITEMS_PER_PAGE,
         }),
-        db.booking.count({ where: whereClause })
+        db.booking.count({ where: whereClause }),
+        db.booking.count({ where: { booking_status: "PENDING" } }),
+        db.booking.count({ where: { booking_status: "CONFIRMED" } }),
+        db.booking.count({ where: { booking_status: "COMPLETED" } }),
+        db.booking.count({ where: { booking_status: "CANCELLED" } }),
     ]);
 
     const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+    const stats = { pending: pendingCount, confirmed: confirmedCount, completed: completedCount, cancelled: cancelledCount };
 
     return (
         <div className="min-h-screen bg-[#FAFAFA]">
-            <div className="mx-auto max-w-[1400px] px-6 py-10">
-                <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <BookingHeader />
+            <div className="mx-auto max-w-350 px-6 py-10">
+                <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <BookingHeader stats={stats} />
                     <BookingFilters query={query} statusFilter={statusFilter} />
                 </div>
 

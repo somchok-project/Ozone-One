@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { OZONE_CENTER } from "@/lib/utils/booth";
 
 // Fix missing marker icons in Next.js
 const DefaultIcon = L.icon({
@@ -14,9 +15,6 @@ const DefaultIcon = L.icon({
   iconAnchor: [12, 41],
 });
 L.Marker.prototype.options.icon = DefaultIcon;
-
-// Ozone One Market — ตลาดโอโซนวัน, ดอนเมือง, กรุงเทพฯ
-const OZONE_CENTER: [number, number] = [13.834329692653869, 100.47686786137426];
 
 interface MapPickerProps {
   lat: string;

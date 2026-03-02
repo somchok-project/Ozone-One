@@ -12,13 +12,11 @@ import {
 interface BookingActionsProps {
   bookingId: string;
   bookingStatus: string;
-  paymentStatus: string;
 }
 
 export function BookingActions({
   bookingId,
   bookingStatus,
-  paymentStatus,
 }: BookingActionsProps) {
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);

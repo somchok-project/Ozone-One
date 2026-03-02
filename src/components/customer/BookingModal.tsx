@@ -13,6 +13,10 @@ import {
 } from "lucide-react";
 import { api } from "@/trpc/react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+const PROMPTPAY_ID = process.env.NEXT_PUBLIC_PROMPTPAY_ID ?? "";
 
 interface BookingModalProps {
     booth: {
@@ -42,7 +46,6 @@ export default function BookingModal({
     const [bookingId, setBookingId] = useState<string>("");
     const [slipPreview, setSlipPreview] = useState<string>("");
     const [verifyMessage, setVerifyMessage] = useState<string>("");
-    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
 
@@ -56,7 +59,7 @@ export default function BookingModal({
     // Generate QR code when entering payment step
     useEffect(() => {
         if (step === "payment") {
-            generateQR();
+        void generateQR();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step]);
@@ -66,7 +69,7 @@ export default function BookingModal({
             const generatePayload = (await import("promptpay-qr")).default;
             const QRCode = await import("qrcode");
 
-            const payload = generatePayload("0622170694", { amount: totalPrice });
+            const payload = generatePayload(PROMPTPAY_ID, { amount: totalPrice });
             const url = await QRCode.toDataURL(payload, {
                 type: "image/png",
                 width: 300,
@@ -90,8 +93,11 @@ export default function BookingModal({
     function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
-
-        // Preview
+        if (file.size > MAX_FILE_BYTES) {
+            toast.error("ไฟล์ใหญ่เกิน 5 MB กรุณาเลือกไฟล์ขนาดเล็กกว่า");
+            e.target.value = "";
+            return;
+        }
         const reader = new FileReader();
         reader.onload = (ev) => {
             setSlipPreview(ev.target?.result as string);
@@ -102,8 +108,6 @@ export default function BookingModal({
     async function handleUploadSlip() {
         const file = fileInputRef.current?.files?.[0];
         if (!file || !bookingId) return;
-
-        setIsUploading(true);
         setStep("uploading");
 
         try {
@@ -120,10 +124,9 @@ export default function BookingModal({
             if (!response.ok) {
                 let errorMsg = `เกิดข้อผิดพลาด (${response.status})`;
                 try {
-                    const errorResult = await response.json();
-                    errorMsg = errorResult.error || errorMsg;
+                    const errorResult = (await response.json()) as { message?: string };
+                    errorMsg = errorResult.message ?? errorMsg;
                 } catch {
-                    // Response wasn't JSON (e.g. 404 HTML page)
                     errorMsg = `API Error: ${response.status} ${response.statusText}`;
                 }
                 setVerifyMessage(errorMsg);
@@ -131,21 +134,19 @@ export default function BookingModal({
                 return;
             }
 
-            const result = await response.json();
+            const result = (await response.json()) as { verified: boolean; message?: string };
 
             if (result.verified) {
-                setVerifyMessage(result.message);
+                setVerifyMessage(result.message ?? "สำเร็จ");
                 setStep("success");
             } else {
-                setVerifyMessage(result.message || "ไม่สามารถตรวจสอบสลิปได้");
+                setVerifyMessage(result.message ?? "ไม่สามารถตรวจสอบสลิปได้");
                 setStep("error");
             }
         } catch (err) {
             console.error("Upload error:", err);
             setVerifyMessage("เกิดข้อผิดพลาด กรุณาลองใหม่");
             setStep("error");
-        } finally {
-            setIsUploading(false);
         }
     }
 
@@ -253,6 +254,7 @@ export default function BookingModal({
                         <div className="mb-4 flex flex-col items-center">
                             <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-white p-3">
                                 {qrDataUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                         src={qrDataUrl}
                                         alt="PromptPay QR Code"
@@ -309,6 +311,7 @@ export default function BookingModal({
 
                             {slipPreview ? (
                                 <div className="relative rounded-xl border-2 border-green-200 bg-green-50/50 p-2">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={slipPreview}
                                         alt="สลิป"
