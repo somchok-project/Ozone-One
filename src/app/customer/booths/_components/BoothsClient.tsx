@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
   Layers,
@@ -14,28 +13,8 @@ import {
   X,
   Map,
 } from "lucide-react";
+import { type Booth, type Zone } from "@/types";
 import Image from "next/image";
-
-interface Zone {
-  id: string;
-  name: string;
-  color_code: string | null;
-}
-
-interface Booth {
-  id: string;
-  name: string;
-  price: number;
-  is_available: boolean;
-  dimension: string;
-  position_x: number | null;
-  position_y: number | null;
-  position_z: number | null;
-  images: { id: string; path: string }[];
-  zone: Zone | null;
-  reviews: { rating: number }[];
-  _count: { bookings: number; reviews: number };
-}
 
 interface BoothsClientProps {
   booths: Booth[];
@@ -54,10 +33,11 @@ export default function BoothsClient({
   zones,
   initialParams,
 }: BoothsClientProps) {
-  const router = useRouter();
   const [searchText, setSearchText] = useState(initialParams.q ?? "");
   const [selectedZone, setSelectedZone] = useState(initialParams.zone ?? "all");
-  const [statusFilter, setStatusFilter] = useState(initialParams.status ?? "all");
+  const [statusFilter, setStatusFilter] = useState(
+    initialParams.status ?? "all",
+  );
   const [minPrice, setMinPrice] = useState(initialParams.minPrice ?? "");
   const [maxPrice, setMaxPrice] = useState(initialParams.maxPrice ?? "");
   const [showFilters, setShowFilters] = useState(false);
@@ -80,7 +60,7 @@ export default function BoothsClient({
   }, [booths, selectedZone, statusFilter, searchText, minPrice, maxPrice]);
 
   function avgRating(booth: Booth) {
-    if (!booth.reviews.length) return null;
+    if (!booth.reviews || booth.reviews.length === 0) return null;
     const sum = booth.reviews.reduce((acc, r) => acc + Number(r.rating), 0);
     return (sum / booth.reviews.length).toFixed(1);
   }
@@ -94,7 +74,11 @@ export default function BoothsClient({
   }
 
   const hasActiveFilters =
-    searchText || selectedZone !== "all" || statusFilter !== "all" || minPrice || maxPrice;
+    searchText ||
+    selectedZone !== "all" ||
+    statusFilter !== "all" ||
+    minPrice ||
+    maxPrice;
 
   return (
     <div>
@@ -104,9 +88,7 @@ export default function BoothsClient({
           <h1 className="text-3xl font-bold text-gray-900">
             ค้นหา<span className="text-orange-500">พื้นที่</span>
           </h1>
-          <p className="mt-1 text-gray-500">
-            {filtered.length} บูธที่พบ
-          </p>
+          <p className="mt-1 text-gray-500">{filtered.length} บูธที่พบ</p>
         </div>
         <div className="flex gap-3">
           <Link
@@ -127,7 +109,7 @@ export default function BoothsClient({
             <SlidersHorizontal size={16} />
             ตัวกรอง
             {hasActiveFilters && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] text-white font-bold">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
                 !
               </span>
             )}
@@ -139,19 +121,19 @@ export default function BoothsClient({
       <div className="relative mb-4">
         <Search
           size={18}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+          className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400"
         />
         <input
           type="text"
           placeholder="ค้นหาชื่อบูธ..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          className="w-full rounded-2xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm shadow-sm ring-0 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+          className="w-full rounded-2xl border border-gray-200 bg-white py-3 pr-4 pl-11 text-sm shadow-sm ring-0 transition outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
         />
         {searchText && (
           <button
             onClick={() => setSearchText("")}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute top-1/2 right-4 -translate-y-1/2 text-gray-400 hover:text-gray-600"
           >
             <X size={16} />
           </button>
@@ -164,7 +146,7 @@ export default function BoothsClient({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* Zone */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <label className="mb-1.5 block text-xs font-semibold tracking-wider text-gray-500 uppercase">
                 โซน
               </label>
               <div className="flex flex-wrap gap-2">
@@ -202,7 +184,7 @@ export default function BoothsClient({
 
             {/* Status */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <label className="mb-1.5 block text-xs font-semibold tracking-wider text-gray-500 uppercase">
                 สถานะ
               </label>
               <div className="flex gap-2">
@@ -228,7 +210,7 @@ export default function BoothsClient({
 
             {/* Price range */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <label className="mb-1.5 block text-xs font-semibold tracking-wider text-gray-500 uppercase">
                 ราคาต่อวัน (฿)
               </label>
               <div className="flex items-center gap-2">
@@ -270,7 +252,9 @@ export default function BoothsClient({
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24">
           <Store size={48} className="mb-4 text-gray-300" />
-          <p className="text-lg font-semibold text-gray-400">ไม่พบบูธที่ตรงกับเงื่อนไข</p>
+          <p className="text-lg font-semibold text-gray-400">
+            ไม่พบบูธที่ตรงกับเงื่อนไข
+          </p>
           <button
             onClick={clearFilters}
             className="mt-4 text-sm font-semibold text-orange-500 hover:underline"
@@ -282,7 +266,7 @@ export default function BoothsClient({
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((booth) => {
             const img =
-              booth.images[0]?.path ??
+              booth.images?.[0]?.path ??
               "https://images.unsplash.com/photo-1543087611-0367ed21aac4?q=80&w=800";
             const rating = avgRating(booth);
 
@@ -294,10 +278,12 @@ export default function BoothsClient({
               >
                 {/* Image */}
                 <div className="relative h-52 overflow-hidden bg-gray-100">
-                  <img
+                  <Image
                     src={img}
                     alt={booth.name}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    width={500}
+                    height={500}
                   />
                   {/* Status badge */}
                   <div className="absolute top-3 right-3">
@@ -341,7 +327,7 @@ export default function BoothsClient({
                 {/* Content */}
                 <div className="p-4">
                   <div className="mb-1 flex items-start justify-between gap-2">
-                    <h3 className="font-bold text-gray-900 group-hover:text-orange-600 transition-colors line-clamp-1">
+                    <h3 className="line-clamp-1 font-bold text-gray-900 transition-colors group-hover:text-orange-600">
                       {booth.name}
                     </h3>
                     {rating && (
@@ -358,7 +344,7 @@ export default function BoothsClient({
                       {booth.dimension}
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span>{booth._count.reviews} รีวิว</span>
+                    <span>{booth._count?.reviews ?? 0} รีวิว</span>
                   </div>
 
                   <div className="flex items-center justify-between">

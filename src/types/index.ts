@@ -14,6 +14,18 @@ export enum PaymentStatus {
   CANCEL = "CANCEL",
 }
 
+export enum BookingStatus {
+  PENDING = "PENDING",
+  CONFIRMED = "CONFIRMED",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
+}
+
+export enum ReviewType {
+  BOOTH = "BOOTH",
+  MARKET = "MARKET",
+}
+
 export interface User {
   id: string;
   name?: string | null;
@@ -65,13 +77,29 @@ export interface Booth {
   name: string;
   price: number;
   is_available: boolean;
-  type: BoothType;
-  // latitude: number; // Decimal in DB, number in JS/TS usually fine for frontend
-  // longitude: number;
+  type?: BoothType;
+  dimension: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  position_x?: number | null;
+  position_y?: number | null;
+  position_z?: number | null;
+  rotation_x?: number | null;
+  rotation_y?: number | null;
+  rotation_z?: number | null;
+  scale?: number | null;
+  model_url?: string | null;
   images?: Image[];
   bookings?: Booking[];
-  user_id: string;
-  user?: User;
+  reviews?: Review[];
+  zone_id?: string | null;
+  zone?: Zone | null;
+  user_id?: string | null;
+  user?: User | null;
+  _count?: {
+    bookings: number;
+    reviews: number;
+  };
 }
 
 export interface Image {
@@ -79,6 +107,14 @@ export interface Image {
   path: string;
   booth_id: string;
   booth?: Booth;
+}
+
+export interface Zone {
+  id: string;
+  name: string;
+  description?: string | null;
+  color_code?: string | null;
+  booths?: Booth[];
 }
 
 export interface Booking {

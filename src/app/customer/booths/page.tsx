@@ -2,6 +2,7 @@ import { api } from "@/trpc/server";
 import { auth } from "@/server/auth";
 import { redirect } from "next/navigation";
 import BoothsClient from "./_components/BoothsClient";
+import { type Booth, type Zone } from "@/types";
 
 interface BoothsPageProps {
   searchParams: Promise<{
@@ -24,8 +25,8 @@ export default async function BoothsPage({ searchParams }: BoothsPageProps) {
     api.booth.getZones(),
   ]);
 
-  const serialized = JSON.parse(JSON.stringify(booths));
-  const serializedZones = JSON.parse(JSON.stringify(zones));
+  const serialized = JSON.parse(JSON.stringify(booths)) as Booth[];
+  const serializedZones = JSON.parse(JSON.stringify(zones)) as Zone[];
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-16">
