@@ -26,7 +26,7 @@ import {
   Select,
 } from "@/components/ui";
 import { createBoothAction, updateBoothAction } from "../actions";
-import { type BoothItem } from "./BoothConfigurator3D";
+import { type BoothItem } from "@/constants/boothItems";
 
 // ─── Dynamic Imports ────────────────────────────────────────────────────────
 
@@ -109,6 +109,10 @@ export function BoothForm({ admins, zones, initialData }: BoothFormProps) {
     
     return [];
   });
+
+  const [dimension, setDimension] = useState<string>(
+    initialData?.dimension ?? "3x3",
+  );
 
   const statusOptions = [
     { value: "true", label: "ว่าง (พร้อมให้เช่า)" },
@@ -208,7 +212,8 @@ export function BoothForm({ admins, zones, initialData }: BoothFormProps) {
                   name="dimension"
                   placeholder="เช่น 3x3 m"
                   required
-                  defaultValue={initialData?.dimension ?? ""}
+                  value={dimension}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDimension(e.target.value)}
                   prefix={<Ruler className="h-4 w-4 text-slate-400" />}
                   className="rounded-xl"
                 />
@@ -333,6 +338,7 @@ export function BoothForm({ admins, zones, initialData }: BoothFormProps) {
             initialItems={boothItems}
             onChange={setBoothItems}
             inputName="booth_items"
+            dimension={dimension}
           />
         </CardContent>
       </Card>

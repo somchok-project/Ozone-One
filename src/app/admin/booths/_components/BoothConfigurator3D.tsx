@@ -10,6 +10,7 @@ import {
   Html,
 } from "@react-three/drei";
 import * as THREE from "three";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import {
   Trash2,
   RotateCw,
@@ -21,100 +22,68 @@ import {
   Eye,
   Store,
 } from "lucide-react";
+import {
+  ALL_ITEM_TYPES,
+  BOOTH_FLOOR_Y,
+  ITEM_COLORS,
+  ITEM_FLOOR_OFFSET,
+  ITEM_ICONS,
+  ITEM_LABELS,
+} from "@/constants/boothItems";
+import type { ItemType, BoothItem, BoothSize } from "@/constants/boothItems";
+import { parseDimension } from "@/lib/utils/booth";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Re-export types so existing consumers (e.g. BoothForm) keep working
+export type { ItemType, BoothItem, BoothSize };
 
-export type ItemType = "table" | "chair" | "rack" | "shelf" | "counter";
-
-export interface BoothItem {
-  id: string;
-  type: ItemType;
-  position: [number, number, number];
-  rotation: [number, number, number];
-  color?: string;
-}
+// ─── Component-only types ─────────────────────────────────────────────────────
 
 interface BoothConfigurator3DProps {
   onChange?: (items: BoothItem[]) => void;
   initialItems?: BoothItem[];
   inputName?: string;
+  /** Dimension string e.g. "3x3 m", "4×6" — parsed into booth floor size */
+  dimension?: string;
 }
-
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-// ความสูงของพื้นบูธ
-const BOOTH_FLOOR_Y = 0.04; 
-// ขนาดขอบเขตบูธ (บูธขนาด 3x3 เมตร -> กว้าง 1.5 จากจุดศูนย์กลาง)
-const BOOTH_BOUNDS = 1.25; 
-
-const ITEM_FLOOR_OFFSET: Record<ItemType, number> = {
-  table: BOOTH_FLOOR_Y + 0.35,
-  chair: BOOTH_FLOOR_Y + 0.25,
-  rack: BOOTH_FLOOR_Y + 0.8,
-  shelf: BOOTH_FLOOR_Y + 0.5,
-  counter: BOOTH_FLOOR_Y + 0.45,
-};
-
-const ITEM_COLORS: Record<ItemType, string> = {
-  table: "#d97706",
-  chair: "#2563eb",
-  rack: "#7c3aed",
-  shelf: "#059669",
-  counter: "#db2777",
-};
-
-const ITEM_LABELS: Record<ItemType, string> = {
-  table: "โต๊ะ",
-  chair: "เก้าอี้",
-  rack: "ราวแขวน",
-  shelf: "ชั้นวาง",
-  counter: "เคาน์เตอร์",
-};
-
-const ITEM_ICONS: Record<ItemType, string> = {
-  table: "🪵",
-  chair: "🪑",
-  rack: "👔",
-  shelf: "📚",
-  counter: "🏪",
-};
 
 // ─── Booth Default Structure ─────────────────────────────────────────────────
 
-function BoothStructure({ onDeselect }: { onDeselect: () => void }) {
+function BoothStructure({ boothSize, onDeselect }: { boothSize: BoothSize; onDeselect: () => void }) {
+  const hw = boothSize.w / 2;
+  const hd = boothSize.d / 2;
   return (
     <group position={[0, 0, 0]} onClick={(e) => { e.stopPropagation(); onDeselect(); }}>
       {/* พื้นบูธ (Floor Pad) */}
       <mesh position={[0, BOOTH_FLOOR_Y / 2, 0]} receiveShadow>
-        <boxGeometry args={[3, BOOTH_FLOOR_Y, 3]} />
+        <boxGeometry args={[boothSize.w, BOOTH_FLOOR_Y, boothSize.d]} />
         <meshStandardMaterial color="#f8fafc" roughness={0.9} />
       </mesh>
       
       {/* ผนังด้านหลัง (Back Wall) */}
-      <mesh position={[0, 0.6 + BOOTH_FLOOR_Y, -1.45]} receiveShadow castShadow>
-        <boxGeometry args={[3, 1.2, 0.1]} />
+      <mesh position={[0, 0.6 + BOOTH_FLOOR_Y, -(hd - 0.05)]} receiveShadow castShadow>
+        <boxGeometry args={[boothSize.w, 1.2, 0.1]} />
         <meshStandardMaterial color="#e2e8f0" roughness={0.9} />
       </mesh>
       
       {/* ผนังด้านซ้าย (Left Wall) */}
-      <mesh position={[-1.45, 0.4 + BOOTH_FLOOR_Y, 0]} receiveShadow castShadow>
-        <boxGeometry args={[0.1, 0.8, 3]} />
+      <mesh position={[-(hw - 0.05), 0.4 + BOOTH_FLOOR_Y, 0]} receiveShadow castShadow>
+        <boxGeometry args={[0.1, 0.8, boothSize.d]} />
         <meshStandardMaterial color="#e2e8f0" roughness={0.9} />
       </mesh>
       
       {/* ผนังด้านขวา (Right Wall) */}
-      <mesh position={[1.45, 0.4 + BOOTH_FLOOR_Y, 0]} receiveShadow castShadow>
-        <boxGeometry args={[0.1, 0.8, 3]} />
+      <mesh position={[hw - 0.05, 0.4 + BOOTH_FLOOR_Y, 0]} receiveShadow castShadow>
+        <boxGeometry args={[0.1, 0.8, boothSize.d]} />
         <meshStandardMaterial color="#e2e8f0" roughness={0.9} />
       </mesh>
 
       {/* พรมบอกทางเข้า (Entrance Indicator) */}
-      <mesh position={[0, BOOTH_FLOOR_Y + 0.005, 1.2]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1.5, 0.4]} />
+      <mesh position={[0, BOOTH_FLOOR_Y + 0.005, hd * 0.8]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[Math.min(1.5, boothSize.w * 0.5), 0.4]} />
         <meshBasicMaterial color="#f97316" transparent opacity={0.3} />
       </mesh>
       {/* Text Label "ทางเข้า" in 3D using Html */}
-      <Html position={[0, BOOTH_FLOOR_Y + 0.01, 1.2]} rotation={[-Math.PI / 2, 0, 0]} transform pointerEvents="none">
+      <Html position={[0, BOOTH_FLOOR_Y + 0.01, hd * 0.8]} rotation={[-Math.PI / 2, 0, 0]} transform pointerEvents="none">
         <div className="text-[8px] font-bold text-orange-800 uppercase tracking-widest opacity-60">
           FRONT / ทางเข้า
         </div>
@@ -133,7 +102,7 @@ function TableMesh({ selected, color }: { selected: boolean; color: string }) {
         <boxGeometry args={[1.2, 0.05, 0.6]} />
         <meshStandardMaterial color={mat} roughness={0.4} metalness={0.1} />
       </mesh>
-      {[[-0.5, -0.25], [0.5, -0.25], [-0.5, 0.25], [0.5, 0.25]].map(([x, z], i) => (
+      {([[-0.5, -0.25], [0.5, -0.25], [-0.5, 0.25], [0.5, 0.25]] as [number, number][]).map(([x, z], i) => (
         <mesh key={i} position={[x, -0.175, z]} castShadow>
           <cylinderGeometry args={[0.025, 0.025, 0.35, 8]} />
           <meshStandardMaterial color={mat} roughness={0.5} />
@@ -155,7 +124,7 @@ function ChairMesh({ selected, color }: { selected: boolean; color: string }) {
         <boxGeometry args={[0.4, 0.4, 0.05]} />
         <meshStandardMaterial color={mat} roughness={0.6} />
       </mesh>
-      {[[-0.16, -0.16], [0.16, -0.16], [-0.16, 0.16], [0.16, 0.16]].map(([x, z], i) => (
+      {([[-0.16, -0.16], [0.16, -0.16], [-0.16, 0.16], [0.16, 0.16]] as [number, number][]).map(([x, z], i) => (
         <mesh key={i} position={[x, -0.125, z]} castShadow>
           <cylinderGeometry args={[0.02, 0.02, 0.25, 8]} />
           <meshStandardMaterial color={mat} roughness={0.5} />
@@ -169,8 +138,8 @@ function RackMesh({ selected, color }: { selected: boolean; color: string }) {
   const mat = selected ? "#f97316" : color;
   return (
     <group>
-      <mesh position={[0, 0.75, 0]} castShadow>
-        <cylinderGeometry args={[0.02, 0.02, 1.2, 12]} rotation={[0, 0, Math.PI / 2]} />
+      <mesh position={[0, 0.75, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.02, 0.02, 1.2, 12]} />
         <meshStandardMaterial color={mat} metalness={0.6} roughness={0.3} />
       </mesh>
       <mesh position={[-0.55, 0, 0]} castShadow>
@@ -225,13 +194,200 @@ function CounterMesh({ selected, color }: { selected: boolean; color: string }) 
   );
 }
 
+function SofaMesh({ selected, color }: { selected: boolean; color: string }) {
+  const mat = selected ? "#f97316" : color;
+  return (
+    <group>
+      {/* Seat */}
+      <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <boxGeometry args={[1.2, 0.15, 0.55]} />
+        <meshStandardMaterial color={mat} roughness={0.7} />
+      </mesh>
+      {/* Back */}
+      <mesh position={[0, 0.3, -0.23]} castShadow>
+        <boxGeometry args={[1.2, 0.45, 0.12]} />
+        <meshStandardMaterial color={mat} roughness={0.7} />
+      </mesh>
+      {/* Armrests */}
+      {([-0.55, 0.55] as number[]).map((x, i) => (
+        <mesh key={i} position={[x, 0.15, 0]} castShadow>
+          <boxGeometry args={[0.1, 0.2, 0.55]} />
+          <meshStandardMaterial color={mat} roughness={0.7} />
+        </mesh>
+      ))}
+      {/* Legs */}
+      {[[-0.5, 0.25], [0.5, 0.25], [-0.5, -0.25], [0.5, -0.25]].map(([x, z], i) => (
+        <mesh key={i} position={[x!, -0.1, z!]} castShadow>
+          <boxGeometry args={[0.07, 0.08, 0.07]} />
+          <meshStandardMaterial color="#94a3b8" metalness={0.4} roughness={0.5} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function DisplayMesh({ selected, color }: { selected: boolean; color: string }) {
+  const mat = selected ? "#f97316" : color;
+  return (
+    <group>
+      {/* Cabinet body */}
+      <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.9, 1.1, 0.4]} />
+        <meshStandardMaterial color={mat} roughness={0.3} metalness={0.1} />
+      </mesh>
+      {/* Glass front */}
+      <mesh position={[0, 0.05, 0.21]}>
+        <boxGeometry args={[0.88, 0.95, 0.02]} />
+        <meshStandardMaterial color="#bae6fd" transparent opacity={0.5} roughness={0.05} metalness={0.2} />
+      </mesh>
+      {/* Interior shelves */}
+      {[-0.25, 0.1, 0.38].map((y, i) => (
+        <mesh key={i} position={[0, y, 0.03]}>
+          <boxGeometry args={[0.85, 0.02, 0.36]} />
+          <meshStandardMaterial color="#e2e8f0" roughness={0.5} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function FridgeMesh({ selected, color }: { selected: boolean; color: string }) {
+  const mat = selected ? "#f97316" : color;
+  return (
+    <group>
+      {/* Body */}
+      <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.65, 1.2, 0.6]} />
+        <meshStandardMaterial color={mat} roughness={0.3} metalness={0.2} />
+      </mesh>
+      {/* Door */}
+      <mesh position={[0, 0.05, 0.31]}>
+        <boxGeometry args={[0.62, 1.15, 0.01]} />
+        <meshStandardMaterial color="#94a3b8" roughness={0.5} />
+      </mesh>
+      {/* Handle */}
+      <mesh position={[0.25, 0.1, 0.32]} castShadow>
+        <boxGeometry args={[0.04, 0.3, 0.04]} />
+        <meshStandardMaterial color="#e2e8f0" metalness={0.7} roughness={0.2} />
+      </mesh>
+      {/* Top */}
+      <mesh position={[0, 0.65, 0]}>
+        <boxGeometry args={[0.65, 0.08, 0.6]} />
+        <meshStandardMaterial color="#334155" roughness={0.4} />
+      </mesh>
+    </group>
+  );
+}
+
+function LampMesh({ selected, color }: { selected: boolean; color: string }) {
+  const mat = selected ? "#f97316" : color;
+  return (
+    <group>
+      {/* Base */}
+      <mesh position={[0, -0.75, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.15, 0.2, 0.06, 16]} />
+        <meshStandardMaterial color="#475569" metalness={0.5} roughness={0.4} />
+      </mesh>
+      {/* Pole */}
+      <mesh position={[0, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.025, 0.025, 1.5, 12]} />
+        <meshStandardMaterial color={mat} metalness={0.6} roughness={0.3} />
+      </mesh>
+      {/* Shade */}
+      <mesh position={[0, 0.8, 0]} castShadow>
+        <coneGeometry args={[0.3, 0.35, 16, 1, true]} />
+        <meshStandardMaterial color="#fef3c7" roughness={0.6} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Bulb */}
+      <mesh position={[0, 0.72, 0]}>
+        <sphereGeometry args={[0.06, 8, 8]} />
+        <meshBasicMaterial color="#fef08a" />
+      </mesh>
+    </group>
+  );
+}
+
+function PlantMesh({ selected }: { selected: boolean; color: string }) {
+  const highlight = selected ? "#f97316" : null;
+  return (
+    <group>
+      {/* Pot */}
+      <mesh position={[0, -0.2, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.2, 0.15, 0.3, 16]} />
+        <meshStandardMaterial color={highlight ?? "#a16207"} roughness={0.8} />
+      </mesh>
+      {/* Soil */}
+      <mesh position={[0, -0.04, 0]}>
+        <cylinderGeometry args={[0.19, 0.19, 0.02, 16]} />
+        <meshStandardMaterial color={highlight ?? "#78350f"} roughness={0.9} />
+      </mesh>
+      {/* Stem */}
+      <mesh position={[0, 0.12, 0]}>
+        <cylinderGeometry args={[0.025, 0.025, 0.3, 8]} />
+        <meshStandardMaterial color={highlight ?? "#4d7c0f"} roughness={0.6} />
+      </mesh>
+      {/* Foliage */}
+      <mesh position={[0, 0.35, 0]} castShadow>
+        <sphereGeometry args={[0.3, 12, 12]} />
+        <meshStandardMaterial color={highlight ?? "#16a34a"} roughness={0.7} />
+      </mesh>
+      <mesh position={[0.2, 0.25, 0.1]} castShadow>
+        <sphereGeometry args={[0.2, 10, 10]} />
+        <meshStandardMaterial color={highlight ?? "#15803d"} roughness={0.7} />
+      </mesh>
+      <mesh position={[-0.15, 0.28, -0.1]} castShadow>
+        <sphereGeometry args={[0.18, 10, 10]} />
+        <meshStandardMaterial color={highlight ?? "#166534"} roughness={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
+function BannerMesh({ selected, color }: { selected: boolean; color: string }) {
+  const mat = selected ? "#f97316" : color;
+  return (
+    <group>
+      {/* Pole */}
+      <mesh position={[0, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.025, 0.025, 1.8, 12]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.6} roughness={0.3} />
+      </mesh>
+      {/* Board */}
+      <mesh position={[0.35, 0.5, 0]} castShadow>
+        <boxGeometry args={[0.7, 0.8, 0.04]} />
+        <meshStandardMaterial color={mat} roughness={0.5} />
+      </mesh>
+      {/* Text accent lines */}
+      <mesh position={[0.35, 0.6, 0.025]}>
+        <boxGeometry args={[0.55, 0.06, 0.01]} />
+        <meshBasicMaterial color="#ffffff" opacity={0.6} transparent />
+      </mesh>
+      <mesh position={[0.35, 0.48, 0.025]}>
+        <boxGeometry args={[0.45, 0.04, 0.01]} />
+        <meshBasicMaterial color="#ffffff" opacity={0.4} transparent />
+      </mesh>
+      {/* Base weight */}
+      <mesh position={[0, -0.85, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.15, 0.18, 0.1, 16]} />
+        <meshStandardMaterial color="#64748b" metalness={0.4} roughness={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
 function FurnitureMesh({ type, selected, color }: { type: ItemType; selected: boolean; color: string }) {
   switch (type) {
-    case "table": return <TableMesh selected={selected} color={color} />;
-    case "chair": return <ChairMesh selected={selected} color={color} />;
-    case "rack": return <RackMesh selected={selected} color={color} />;
-    case "shelf": return <ShelfMesh selected={selected} color={color} />;
+    case "table":   return <TableMesh   selected={selected} color={color} />;
+    case "chair":   return <ChairMesh   selected={selected} color={color} />;
+    case "rack":    return <RackMesh    selected={selected} color={color} />;
+    case "shelf":   return <ShelfMesh   selected={selected} color={color} />;
     case "counter": return <CounterMesh selected={selected} color={color} />;
+    case "sofa":    return <SofaMesh    selected={selected} color={color} />;
+    case "display": return <DisplayMesh selected={selected} color={color} />;
+    case "fridge":  return <FridgeMesh  selected={selected} color={color} />;
+    case "lamp":    return <LampMesh    selected={selected} color={color} />;
+    case "plant":   return <PlantMesh   selected={selected} color={color} />;
+    case "banner":  return <BannerMesh  selected={selected} color={color} />;
   }
 }
 
@@ -241,6 +397,7 @@ function FurnitureItem({
   item,
   isSelected,
   transformMode,
+  boothSize,
   orbitEnabled,
   onSelect,
   onTransform,
@@ -248,6 +405,7 @@ function FurnitureItem({
   item: BoothItem;
   isSelected: boolean;
   transformMode: "translate" | "rotate" | "none";
+  boothSize: BoothSize;
   orbitEnabled: React.MutableRefObject<boolean>;
   onSelect: (id: string) => void;
   onTransform: (id: string, position: [number, number, number], rotation: [number, number, number]) => void;
@@ -259,6 +417,8 @@ function FurnitureItem({
   useEffect(() => { setMounted(true); }, []);
 
   const floorY = ITEM_FLOOR_OFFSET[item.type];
+  const boundsW = boothSize.w / 2 - 0.3;
+  const boundsD = boothSize.d / 2 - 0.3;
 
   const handleObjectChange = useCallback(() => {
     if (!groupRef.current) return;
@@ -267,11 +427,11 @@ function FurnitureItem({
     
     // Clamp ให้อยู่ในกรอบบูธ (ไม่ให้ทะลุผนัง) และไม่จมดิน
     p.y = floorY;
-    p.x = Math.max(-BOOTH_BOUNDS, Math.min(BOOTH_BOUNDS, p.x));
-    p.z = Math.max(-BOOTH_BOUNDS, Math.min(BOOTH_BOUNDS, p.z));
+    p.x = Math.max(-boundsW, Math.min(boundsW, p.x));
+    p.z = Math.max(-boundsD, Math.min(boundsD, p.z));
     
     onTransform(item.id, [p.x, p.y, p.z], [r.x, r.y, r.z]);
-  }, [item.id, floorY, onTransform]);
+  }, [item.id, floorY, boundsW, boundsD, onTransform]);
 
   const showX = transformMode === "translate";
   const showZ = transformMode === "translate";
@@ -325,16 +485,18 @@ function Scene({
   items,
   selectedId,
   transformMode,
+  boothSize,
   setSelectedId,
   onTransform,
 }: {
   items: BoothItem[];
   selectedId: string | null;
   transformMode: "translate" | "rotate" | "none";
+  boothSize: BoothSize;
   setSelectedId: (id: string | null) => void;
   onTransform: (id: string, p: [number, number, number], r: [number, number, number]) => void;
 }) {
-  const orbitRef = useRef<any>(null);
+  const orbitRef = useRef<OrbitControlsImpl | null>(null);
   const orbitEnabled = useRef(true);
 
   // Sync orbit controls state
@@ -377,7 +539,7 @@ function Scene({
       />
 
       {/* โครงสร้างบูธ Default */}
-      <BoothStructure onDeselect={() => setSelectedId(null)} />
+      <BoothStructure boothSize={boothSize} onDeselect={() => setSelectedId(null)} />
 
       <ContactShadows position={[0, BOOTH_FLOOR_Y, 0]} opacity={0.3} scale={5} blur={2} far={2} />
 
@@ -387,6 +549,7 @@ function Scene({
           item={item}
           isSelected={item.id === selectedId}
           transformMode={transformMode}
+          boothSize={boothSize}
           orbitEnabled={orbitEnabled}
           onSelect={setSelectedId}
           onTransform={onTransform}
@@ -404,11 +567,16 @@ export default function BoothConfigurator3D({
   onChange,
   initialItems = [],
   inputName = "booth_items",
+  dimension,
 }: BoothConfigurator3DProps) {
   const [items, setItems] = useState<BoothItem[]>(initialItems);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "none">("translate");
   const [showItemList, setShowItemList] = useState(false);
+
+  const boothSize = parseDimension(dimension);
+  const boundsW = boothSize.w / 2 - 0.3;
+  const boundsD = boothSize.d / 2 - 0.3;
 
   const selectedItem = items.find((i) => i.id === selectedId);
 
@@ -450,9 +618,9 @@ export default function BoothConfigurator3D({
       ...selectedItem,
       id: `item-${Date.now()}-${idCounter++}`,
       position: [
-        Math.min(BOOTH_BOUNDS, selectedItem.position[0] + 0.5),
+        Math.min(boundsW, selectedItem.position[0] + 0.5),
         selectedItem.position[1],
-        Math.min(BOOTH_BOUNDS, selectedItem.position[2] + 0.5),
+        Math.min(boundsD, selectedItem.position[2] + 0.5),
       ],
     };
     setItems((prev) => {
@@ -461,7 +629,7 @@ export default function BoothConfigurator3D({
       return next;
     });
     setSelectedId(dup.id);
-  }, [selectedItem, onChange]);
+  }, [selectedItem, onChange, boundsW, boundsD]);
 
   const handleTransform = useCallback(
     (id: string, position: [number, number, number], rotation: [number, number, number]) => {
@@ -488,6 +656,7 @@ export default function BoothConfigurator3D({
               items={items}
               selectedId={selectedId}
               transformMode={transformMode}
+              boothSize={boothSize}
               setSelectedId={setSelectedId}
               onTransform={handleTransform}
             />
@@ -504,7 +673,7 @@ export default function BoothConfigurator3D({
           {/* Badge */}
           <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 shadow-sm backdrop-blur-md">
             <Store className="h-4 w-4 text-orange-500" />
-            <span className="text-xs font-bold text-slate-700">จำลองพื้นที่ 3x3 เมตร</span>
+            <span className="text-xs font-bold text-slate-700">จำลองพื้นที่ {boothSize.w}×{boothSize.d} เมตร</span>
           </div>
 
           {/* Right Tools: View/Edit Modes */}
@@ -579,8 +748,8 @@ export default function BoothConfigurator3D({
           </div>
 
           {/* Bottom Dock: Add Items */}
-          <div className="pointer-events-auto flex max-w-full overflow-x-auto rounded-[2rem] bg-white/95 p-2 shadow-lg backdrop-blur-md ring-1 ring-slate-200/50 sm:overflow-visible">
-            {(["table", "chair", "rack", "shelf", "counter"] as ItemType[]).map((type) => (
+          <div className="pointer-events-auto flex max-w-full overflow-x-auto rounded-[2rem] bg-white/95 p-2 shadow-lg backdrop-blur-md ring-1 ring-slate-200/50">
+            {ALL_ITEM_TYPES.map((type) => (
               <button
                 key={type}
                 type="button"
