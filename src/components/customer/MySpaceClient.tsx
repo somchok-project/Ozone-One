@@ -6,72 +6,25 @@ import Image from "next/image";
 import {
   Calendar,
   MapPin,
-  CheckCircle,
-  Clock,
-  XCircle,
   ArrowRight,
   ShoppingBag,
   CreditCard,
   Trash2,
   MessageSquare,
+  XCircle,
 } from "lucide-react";
 import { api } from "@/trpc/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import PaymentModal from "./PaymentModal";
 import WriteReviewModal from "./WriteReviewModal";
-
-interface Booking {
-  id: string;
-  start_date: string;
-  end_date: string;
-  total_price: number;
-  payment_status: string;
-  booking_status: string;
-  payment_slip_url: string | null;
-  booth: {
-    id: string;
-    name: string;
-    price: number;
-    images: { id: string; path: string; booth_id: string }[];
-  };
-}
+import { type Booking, BookingStatus, PaymentStatus } from "@/types";
+import { statusConfig, paymentConfig } from "@/constants/booking";
+import { formatThaiDate } from "@/lib/utils/format";
 
 interface MySpaceClientProps {
   bookings: Booking[];
 }
-
-const statusConfig: Record<
-  string,
-  { label: string; color: string; icon: typeof CheckCircle }
-> = {
-  CONFIRMED: {
-    label: "ยืนยันแล้ว",
-    color: "bg-emerald-50 text-emerald-700 border-emerald-200/50",
-    icon: CheckCircle,
-  },
-  PENDING: {
-    label: "รอดำเนินการ",
-    color: "bg-amber-50 text-amber-700 border-amber-200/50",
-    icon: Clock,
-  },
-  COMPLETED: {
-    label: "เสร็จสิ้น",
-    color: "bg-blue-50 text-blue-700 border-blue-200/50",
-    icon: CheckCircle,
-  },
-  CANCELLED: {
-    label: "ยกเลิก",
-    color: "bg-rose-50 text-rose-700 border-rose-200/50",
-    icon: XCircle,
-  },
-};
-
-const paymentConfig: Record<string, { label: string; color: string }> = {
-  SUCCESS: { label: "ชำระแล้ว", color: "bg-emerald-100 text-emerald-700" },
-  PENDING: { label: "รอชำระ", color: "bg-amber-100 text-amber-700" },
-  CANCEL: { label: "ยกเลิก", color: "bg-rose-100 text-rose-700" },
-};
 
 export default function MySpaceClient({ bookings }: MySpaceClientProps) {
   const [paymentBooking, setPaymentBooking] = useState<Booking | null>(null);
@@ -145,34 +98,26 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
         ) : (
           <div className="grid gap-6">
             {bookings.map((booking) => {
-              const FALLBACK_STATUS = statusConfig.PENDING!;
-              const FALLBACK_PAYMENT = paymentConfig.PENDING!;
               const status =
-                statusConfig[booking.booking_status] ?? FALLBACK_STATUS;
+                statusConfig[booking.booking_status] ??
+                statusConfig[BookingStatus.PENDING]!;
               const payment =
-                paymentConfig[booking.payment_status] ?? FALLBACK_PAYMENT;
+                paymentConfig[booking.payment_status] ??
+                paymentConfig[PaymentStatus.PENDING]!;
               const StatusIcon = status.icon;
               const boothImage =
                 booking.booth.images?.[0]?.path ?? "/placeholder-image.jpg";
 
-              const startDate = new Date(booking.start_date).toLocaleDateString(
-                "th-TH",
-                {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                },
-              );
-              const endDate = new Date(booking.end_date).toLocaleDateString(
-                "th-TH",
-                { day: "numeric", month: "short", year: "numeric" },
-              );
+              const startDate = formatThaiDate(new Date(booking.start_date));
+              const endDate = formatThaiDate(new Date(booking.end_date));
 
-              const isPending = booking.booking_status === "PENDING";
+              const isPending =
+                booking.booking_status === BookingStatus.PENDING;
               const canReview =
-                booking.booking_status === "COMPLETED" ||
-                booking.booking_status === "CONFIRMED";
-              const needsPayment = booking.payment_status === "PENDING";
+                booking.booking_status === BookingStatus.COMPLETED ||
+                booking.booking_status === BookingStatus.CONFIRMED;
+              const needsPayment =
+                booking.payment_status === PaymentStatus.PENDING;
               const isCancelling = cancellingId === booking.id;
 
               return (

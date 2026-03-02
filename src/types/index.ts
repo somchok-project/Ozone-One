@@ -119,15 +119,21 @@ export interface Zone {
 
 export interface Booking {
   id: string;
-  start_date: Date;
-  end_date: Date;
+  start_date: Date | string;
+  end_date: Date | string;
   total_price: number;
-  payment_status: PaymentStatus;
-  payment_slip_url: string;
-  user_id: string;
+  payment_status: PaymentStatus | string;
+  booking_status: BookingStatus | string;
+  payment_slip_url: string | null;
+  user_id?: string;
   user?: User;
-  booth_id: string;
-  booth?: Booth;
+  booth_id?: string;
+  booth: {
+    id: string;
+    name: string;
+    price: number;
+    images?: { id: string; path: string; booth_id: string }[];
+  };
 }
 
 export interface Review {

@@ -74,7 +74,7 @@ model Booth {
     id           String  @id @default(uuid()) @db.Uuid
     name         String
     price        Float
-    is_available Boolean @default(true) // Active/Inactive status for rental
+    is_available Boolean @default(true) // เปิด/ปิด ให้เช่า
     dimension    String
 
     // พิกัดสำหรับแสดงบนแผนที่ตลาด 2D
