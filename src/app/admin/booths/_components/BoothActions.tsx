@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useTransition } from "react";
 import Link from "next/link";
-import { MoreHorizontal, Edit, Trash, AlertTriangle } from "lucide-react";
+import { MoreHorizontal, Edit, Trash, AlertTriangle, Eye } from "lucide-react";
 import { Button } from "@/components/ui";
 import { deleteBoothAction } from "../actions";
 import { toast } from "sonner";
@@ -50,7 +50,13 @@ export function BoothActions({ boothId }: { boothId: string }) {
             </Button>
 
             {isOpen && (
-                <div className="absolute right-0 top-full mt-1 w-36 rounded-2xl bg-white shadow-xl border border-slate-100 py-2 z-50">
+                <div className="absolute right-0 top-full mt-1 w-40 rounded-2xl bg-white shadow-xl border border-slate-100 py-2 z-50">
+                    <Link href={`/admin/booths/${boothId}`} onClick={() => setIsOpen(false)}>
+                        <button className="w-full flex items-center px-4 py-2.5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-500 transition-colors">
+                            <Eye className="h-4 w-4 mr-2.5" />
+                            ดูรายละเอียด
+                        </button>
+                    </Link>
                     <Link href={`/admin/booths/${boothId}/edit`} onClick={() => setIsOpen(false)}>
                         <button className="w-full flex items-center px-4 py-2.5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-500 transition-colors">
                             <Edit className="h-4 w-4 mr-2.5" />

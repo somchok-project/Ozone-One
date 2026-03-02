@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { MapPin, Ruler, Store, CalendarClock, CalendarCheck, CalendarX2 } from "lucide-react";
 import { Card } from "@/components/ui";
-import { formatCurrency } from "@/lib/utils/format";
+import { formatCurrency, formatThaiDate } from "@/lib/utils/format";
 import { BoothActions } from "./BoothActions";
 
 interface ActiveBooking {
@@ -33,14 +34,6 @@ interface BoothTableProps {
     booths: BoothRow[];
 }
 
-function formatDate(d: Date | string) {
-    return new Date(d).toLocaleDateString("th-TH", {
-        day: "numeric",
-        month: "short",
-        year: "2-digit",
-    });
-}
-
 export function BoothTable({ booths }: BoothTableProps) {
     return (
         <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white rounded-3xl overflow-hidden">
@@ -61,15 +54,15 @@ export function BoothTable({ booths }: BoothTableProps) {
                             <tr key={booth.id} className="group transition-colors hover:bg-orange-50/20">
                                 {/* Name */}
                                 <td className="px-8 py-5">
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-500 transition-transform group-hover:scale-110">
+                                    <Link href={`/admin/booths/${booth.id}`} className="flex items-center gap-4 group/name">
+                                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-500 transition-transform group-hover:scale-110 group-hover/name:bg-orange-500 group-hover/name:text-white">
                                             <MapPin className="h-5 w-5" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="font-bold text-slate-900">{booth.name}</span>
+                                            <span className="font-bold text-slate-900 group-hover/name:text-orange-600 transition-colors">{booth.name}</span>
                                             <span className="text-[11px] text-slate-400">สร้างโดย: {booth.user?.name ?? "Admin"}</span>
                                         </div>
-                                    </div>
+                                    </Link>
                                 </td>
 
                                 {/* Zone */}
@@ -119,7 +112,7 @@ export function BoothTable({ booths }: BoothTableProps) {
                                             </span>
                                             {booth.activeBooking && (
                                                 <span className="text-[11px] text-slate-400">
-                                                    หมด {formatDate(booth.activeBooking.end_date)}
+                                                    หมด {formatThaiDate(new Date(booth.activeBooking.end_date))}
                                                     {booth.activeBooking.user?.name && (
                                                         <> · {booth.activeBooking.user.name}</>
                                                     )}
@@ -134,7 +127,7 @@ export function BoothTable({ booths }: BoothTableProps) {
                                             </span>
                                             {booth.nextBooking ? (
                                                 <span className="text-[11px] text-slate-400">
-                                                    จะว่างถึง {formatDate(booth.nextBooking.start_date)}
+                                                    จะว่างถึง {formatThaiDate(new Date(booth.nextBooking.start_date))}
                                                 </span>
                                             ) : (
                                                 <span className="text-[11px] text-slate-400">ไม่มีคิวจอง</span>
@@ -150,7 +143,7 @@ export function BoothTable({ booths }: BoothTableProps) {
                                             <span className="text-sm font-bold text-slate-900">{booth.upcomingCount} รายการ</span>
                                             {booth.nextBooking && !booth.hasActiveBooking && (
                                                 <span className="text-[11px] text-slate-400">
-                                                    เริ่ม {formatDate(booth.nextBooking.start_date)}
+                                                    เริ่ม {formatThaiDate(new Date(booth.nextBooking.start_date))}
                                                 </span>
                                             )}
                                         </div>
