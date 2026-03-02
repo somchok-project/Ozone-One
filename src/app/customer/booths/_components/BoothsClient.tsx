@@ -12,9 +12,15 @@ import {
   ChevronRight,
   X,
   Map,
+  LayoutGrid,
+  Banknote,
 } from "lucide-react";
 import { type Booth, type Zone } from "@/types";
 import Image from "next/image";
+import {
+  FilterSelect,
+  type FilterSelectOption,
+} from "@/components/ui/filter-select";
 
 interface BoothsClientProps {
   booths: Booth[];
@@ -35,29 +41,59 @@ export default function BoothsClient({
 }: BoothsClientProps) {
   const [searchText, setSearchText] = useState(initialParams.q ?? "");
   const [selectedZone, setSelectedZone] = useState(initialParams.zone ?? "all");
-  const [statusFilter, setStatusFilter] = useState(
-    initialParams.status ?? "all",
-  );
-  const [minPrice, setMinPrice] = useState(initialParams.minPrice ?? "");
-  const [maxPrice, setMaxPrice] = useState(initialParams.maxPrice ?? "");
+  const [priceRange, setPriceRange] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
+
+  const zoneOptions: FilterSelectOption[] = useMemo(
+    () => [
+      { value: "all", label: "ทุกโซน", shortLabel: "โซน" },
+      ...zones.map((z) => ({
+        value: z.id,
+        label: z.name,
+        icon: z.color_code ? (
+          <div
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: z.color_code }}
+          />
+        ) : undefined,
+      })),
+    ],
+    [zones],
+  );
+
+  const priceOptions: FilterSelectOption[] = [
+    { value: "all", label: "ทุกราคา", shortLabel: "ราคา" },
+    { value: "0-1000", label: "ต่ำกว่า 1,000฿", shortLabel: "<1k" },
+    { value: "1000-3000", label: "1,000฿ - 3,000฿", shortLabel: "1k-3k" },
+    { value: "3000-5000", label: "3,000฿ - 5,000฿", shortLabel: "3k-5k" },
+    { value: "5000-up", label: "มากกว่า 5,000฿", shortLabel: "5k+" },
+  ];
 
   const filtered = useMemo(() => {
     return booths.filter((booth) => {
       const matchZone =
         selectedZone === "all" || booth.zone?.id === selectedZone;
-      const matchStatus =
-        statusFilter === "all" ||
-        (statusFilter === "available" && booth.is_available) ||
-        (statusFilter === "unavailable" && !booth.is_available);
+
+      let matchPrice = true;
+      if (priceRange !== "all") {
+        const parts = priceRange.split("-");
+        const min = Number(parts[0]);
+        const max = parts[1] === "up" ? Infinity : Number(parts[1]);
+
+        if (!isNaN(min) && !isNaN(max)) {
+          matchPrice = booth.price >= min && booth.price <= max;
+        } else if (!isNaN(min)) {
+          matchPrice = booth.price >= min;
+        }
+      }
+
       const matchSearch =
         !searchText ||
         booth.name.toLowerCase().includes(searchText.toLowerCase());
-      const matchMin = !minPrice || booth.price >= Number(minPrice);
-      const matchMax = !maxPrice || booth.price <= Number(maxPrice);
-      return matchZone && matchStatus && matchSearch && matchMin && matchMax;
+
+      return matchZone && matchPrice && matchSearch;
     });
-  }, [booths, selectedZone, statusFilter, searchText, minPrice, maxPrice]);
+  }, [booths, selectedZone, priceRange, searchText]);
 
   function avgRating(booth: Booth) {
     if (!booth.reviews || booth.reviews.length === 0) return null;
@@ -68,17 +104,11 @@ export default function BoothsClient({
   function clearFilters() {
     setSearchText("");
     setSelectedZone("all");
-    setStatusFilter("all");
-    setMinPrice("");
-    setMaxPrice("");
+    setPriceRange("all");
   }
 
   const hasActiveFilters =
-    searchText ||
-    selectedZone !== "all" ||
-    statusFilter !== "all" ||
-    minPrice ||
-    maxPrice;
+    searchText || selectedZone !== "all" || priceRange !== "all";
 
   return (
     <div>
@@ -90,6 +120,50 @@ export default function BoothsClient({
           </h1>
           <p className="mt-1 text-gray-500">{filtered.length} บูธที่พบ</p>
         </div>
+      </div>
+
+      {/* Search and Quick Filters */}
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center">
+        <div className="relative flex-1">
+          <Search
+            size={18}
+            className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            type="text"
+            placeholder="ค้นหาชื่อบูธ หรือสิ่งที่เกี่ยวข้อง..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="w-full rounded-2xl border border-gray-200 bg-white py-3 pr-4 pl-11 text-sm shadow-sm ring-0 transition outline-none placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+          />
+          {searchText && (
+            <button
+              onClick={() => setSearchText("")}
+              className="absolute top-1/2 right-4 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <FilterSelect
+            value={selectedZone}
+            onChange={setSelectedZone}
+            options={zoneOptions}
+            placeholder="เลือกโซน"
+            icon={<LayoutGrid className="h-4 w-4" />}
+            dropdownTitle="เลือกตามโซนพื้นที่"
+          />
+
+          <FilterSelect
+            value={priceRange}
+            onChange={setPriceRange}
+            options={priceOptions}
+            placeholder="ช่วงราคา"
+            icon={<Banknote className="h-4 w-4" />}
+            dropdownTitle="เลือกตามช่วงราคา"
+          />
+        </div>{" "}
         <div className="flex gap-3">
           <Link
             href="/customer/map"
@@ -98,151 +172,26 @@ export default function BoothsClient({
             <Map size={16} />
             แผนผัง 3D
           </Link>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all ${
-              showFilters
-                ? "border-orange-200 bg-orange-50 text-orange-700"
-                : "border-gray-200 bg-white text-gray-700 hover:border-orange-200 hover:bg-orange-50"
-            }`}
-          >
-            <SlidersHorizontal size={16} />
-            ตัวกรอง
-            {hasActiveFilters && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
-                !
-              </span>
-            )}
-          </button>
         </div>
       </div>
 
-      {/* Search bar */}
-      <div className="relative mb-4">
-        <Search
-          size={18}
-          className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400"
-        />
-        <input
-          type="text"
-          placeholder="ค้นหาชื่อบูธ..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          className="w-full rounded-2xl border border-gray-200 bg-white py-3 pr-4 pl-11 text-sm shadow-sm ring-0 transition outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-        />
-        {searchText && (
-          <button
-            onClick={() => setSearchText("")}
-            className="absolute top-1/2 right-4 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          >
-            <X size={16} />
-          </button>
-        )}
-      </div>
-
-      {/* Extended filters */}
+      {/* Extended filters (Price range removed) */}
       {showFilters && (
-        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Zone */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold tracking-wider text-gray-500 uppercase">
-                โซน
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setSelectedZone("all")}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
-                    selectedZone === "all"
-                      ? "bg-orange-500 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-orange-100"
-                  }`}
-                >
-                  ทุกโซน
-                </button>
-                {zones.map((z) => (
-                  <button
-                    key={z.id}
-                    onClick={() => setSelectedZone(z.id)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all ${
-                      selectedZone === z.id
-                        ? "bg-orange-500 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-orange-100"
-                    }`}
-                  >
-                    {z.color_code && (
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: z.color_code }}
-                      />
-                    )}
-                    {z.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Status */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold tracking-wider text-gray-500 uppercase">
-                สถานะ
-              </label>
-              <div className="flex gap-2">
-                {[
-                  { label: "ทั้งหมด", value: "all" },
-                  { label: "ว่าง", value: "available" },
-                  { label: "เต็ม", value: "unavailable" },
-                ].map((s) => (
-                  <button
-                    key={s.value}
-                    onClick={() => setStatusFilter(s.value)}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
-                      statusFilter === s.value
-                        ? "bg-orange-500 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-orange-100"
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Price range */}
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold tracking-wider text-gray-500 uppercase">
-                ราคาต่อวัน (฿)
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  placeholder="ต่ำสุด"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-orange-400"
-                />
-                <span className="text-gray-400">–</span>
-                <input
-                  type="number"
-                  placeholder="สูงสุด"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-orange-400"
-                />
-              </div>
-            </div>
-
-            {/* Clear */}
+        <div className="mb-6 rounded-2xl border border-orange-100 bg-orange-50/30 p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              {hasActiveFilters
+                ? "กำลังกรองข้อมูลด้วยเงื่อนไขที่คุณเลือก"
+                : "คุณยังไม่ได้เลือกตัวกรองเพิ่มเติม"}
+            </p>
             {hasActiveFilters && (
-              <div className="flex items-end">
-                <button
-                  onClick={clearFilters}
-                  className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-red-500 hover:bg-red-50"
-                >
-                  <X size={14} />
-                  ล้างตัวกรอง
-                </button>
-              </div>
+              <button
+                onClick={clearFilters}
+                className="inline-flex h-[42px] items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-red-500 shadow-sm ring-1 ring-red-100 transition-all hover:bg-red-50"
+              >
+                <X size={16} />
+                ล้างตัวกรองทั้งหมด
+              </button>
             )}
           </div>
         </div>
@@ -286,33 +235,22 @@ export default function BoothsClient({
                     height={500}
                   />
                   {/* Status badge */}
-                  <div className="absolute top-3 right-3">
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
-                        booth.is_available
-                          ? "bg-green-500/90 text-white"
-                          : "bg-red-500/90 text-white"
-                      }`}
-                    >
-                      {booth.is_available ? (
-                        <>
-                          <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-                          ว่าง
-                        </>
-                      ) : (
-                        "เต็ม"
-                      )}
-                    </span>
-                  </div>
+                  {!booth.is_available && (
+                    <div className="absolute top-3 left-3 z-10">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/90 px-3 py-1 text-xs font-bold text-white">
+                        เต็ม
+                      </span>
+                    </div>
+                  )}
                   {/* Zone chip */}
                   {booth.zone && (
-                    <div className="absolute bottom-3 left-3">
+                    <div className="absolute top-3 right-3 z-10">
                       <span
                         className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold backdrop-blur-sm"
                         style={{
                           backgroundColor: booth.zone.color_code
                             ? `${booth.zone.color_code}33`
-                            : "#f97316",
+                            : "#f9731633",
                           color: booth.zone.color_code ?? "#ea580c",
                           border: `1px solid ${booth.zone.color_code ?? "#f97316"}55`,
                         }}
