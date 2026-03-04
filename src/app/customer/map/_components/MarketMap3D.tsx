@@ -25,6 +25,9 @@ import {
   ZoomOut,
   RotateCcw,
   Eye,
+  Camera,
+  Compass,
+  HelpCircle,
 } from "lucide-react";
 
 interface BoothMapData {
@@ -70,23 +73,18 @@ function BoothMesh({
   const sc = booth.scale ?? 1;
   const ry = booth.rotation_y ?? 0;
 
-  // Derive colour: grey=closed, red=booked today, zone/orange=available
+  // Derive colour: grey=closed, green=available
   const baseColor = !booth.is_available
     ? new THREE.Color("#94a3b8")
-    : booth.isCurrentlyBooked
-    ? new THREE.Color("#ef4444")
-    : booth.zone?.color_code
-    ? new THREE.Color(booth.zone.color_code)
-    : new THREE.Color("#f97316");
-  const zoneColor = baseColor;
+    : new THREE.Color("#22c55e");
 
   const selectedColor = new THREE.Color("#fbbf24");
-  const hoveredColor = zoneColor.clone().lerp(new THREE.Color("#ffffff"), 0.3);
+  const hoveredColor = baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.3);
   const finalColor = isSelected
     ? selectedColor
     : hovered
-    ? hoveredColor
-    : zoneColor;
+      ? hoveredColor
+      : baseColor;
 
   useFrame((_, delta) => {
     if (!meshRef.current) return;
@@ -148,8 +146,8 @@ function BoothMesh({
             !booth.is_available
               ? "#94a3b8"
               : booth.isCurrentlyBooked
-              ? "#f87171"
-              : "#4ade80"
+                ? "#f87171"
+                : "#4ade80"
           }
           roughness={0.5}
         />
@@ -271,6 +269,16 @@ function Scene({
         infiniteGrid
       />
 
+      {/* Invisible ground plane for deselection */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.05, 0]}
+        visible={false}
+        onClick={() => onSelect("" as any)}
+      >
+        <planeGeometry args={[200, 200]} />
+      </mesh>
+
       {/* Zone areas */}
       {Array.from(zoneMap.entries()).map(([zoneId, zData]) => {
         const xs = zData.booths.map((b) => b.position_x ?? 0);
@@ -351,6 +359,7 @@ export default function MarketMap3D({ booths }: MarketMap3DProps) {
   const controlsRef = useRef<any>(null);
 
   const selectedBooth = booths.find((b) => b.id === selectedId) ?? null;
+  const [showHelp, setShowHelp] = useState(false);
 
   function resetCamera() {
     if (controlsRef.current) {
@@ -358,61 +367,114 @@ export default function MarketMap3D({ booths }: MarketMap3DProps) {
     }
   }
 
+  function setCameraView(px: number, py: number, pz: number) {
+    if (controlsRef.current) {
+      const controls = controlsRef.current;
+      controls.object.position.set(px, py, pz);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+  }
+
   return (
     <div className="relative h-[calc(100vh-5rem)] w-full">
       {/* Top bar */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-3">
-        <Link
-          href="/customer/booths"
-          className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md ring-1 ring-white/20 transition hover:bg-white/20"
-        >
-          <ArrowLeft size={16} />
-          กลับไปหน้าบูธ
-        </Link>
-        <div className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md ring-1 ring-white/20">
-          🗺️ แผนผังตลาด 3D — {booths.length} บูธ
+      <div className="absolute top-4 left-4 right-4 z-10 flex items-start justify-between">
+        {/* Left: back + title */}
+        <div className="flex items-center gap-2">
+          <Link
+            href="/customer/booths"
+            className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md ring-1 ring-white/20 transition hover:bg-white/20"
+          >
+            <ArrowLeft size={16} />
+            กลับ
+          </Link>
+          <div className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md ring-1 ring-white/20">
+            🗺️ แผนผังตลาด 3D — {booths.length} บูธ
+          </div>
+        </div>
+
+        {/* Right: legend + help */}
+        <div className="flex items-start gap-2">
+          {/* Help toggle */}
+          <button
+            onClick={() => setShowHelp(!showHelp)}
+            className={`flex h-9 w-9 items-center justify-center rounded-xl backdrop-blur-md ring-1 ring-white/20 transition ${showHelp ? 'bg-white/30 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}
+            title="วิธีใช้"
+          >
+            <HelpCircle size={16} />
+          </button>
+
+          {/* Compact legend */}
+          <div className="rounded-xl bg-black/60 px-3 py-2 text-[11px] text-white backdrop-blur-md ring-1 ring-white/10">
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm bg-green-500 inline-block" />
+                สามารถจองได้
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm bg-slate-400 inline-block" />
+                ปิดให้บริการชั่วคราว
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="absolute top-4 right-4 z-10 rounded-xl bg-black/60 px-4 py-3 text-xs text-white backdrop-blur-md ring-1 ring-white/10">
-        <p className="mb-2 font-bold text-gray-300 uppercase tracking-wider">
-          สำนวน
-        </p>
-        <div className="flex flex-col gap-1.5">
-          <span className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-green-500 inline-block" />
-            ประตูเขียว = ว่างอยู่
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-red-400 inline-block" />
-            ประตูแดง = จองวันนี้แล้ว (วันอื่นอาจว่าง)
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-slate-400 inline-block" />
-            ประตูเทา = ปิดชั่วคราว
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-sm bg-yellow-400 inline-block" />
-            ขอบเหลือง = เลือกอยู่
-          </span>
+      {/* Help overlay */}
+      {showHelp && (
+        <div className="absolute top-16 right-4 z-20 w-64 rounded-2xl bg-black/80 p-4 text-xs text-white backdrop-blur-xl ring-1 ring-white/20">
+          <p className="mb-3 font-bold text-green-400">🎮 วิธีใช้แผนผัง 3D</p>
+          <div className="space-y-2 text-gray-300">
+            <p>🖱️ <strong>คลิกซ้ายลาก</strong> — หมุนกล้อง</p>
+            <p>🖱️ <strong>คลิกขวาลาก</strong> — เลื่อนกล้อง</p>
+            <p>🔍 <strong>Scroll</strong> — ซูมเข้า/ออก</p>
+            <p>👆 <strong>คลิกบูธ</strong> — ดูรายละเอียด & จอง</p>
+            <p>📐 <strong>ปุ่มมุมมอง</strong> — เปลี่ยนมุมกล้องด่วน</p>
+          </div>
+          <button onClick={() => setShowHelp(false)} className="mt-3 w-full rounded-lg bg-white/10 py-1.5 text-center font-medium text-white/80 hover:bg-white/20">เข้าใจแล้ว ✓</button>
         </div>
-      </div>
+      )}
 
-      {/* Camera controls */}
+      {/* Camera controls - bottom left */}
       <div className="absolute bottom-6 left-4 z-10 flex flex-col gap-2">
-        <button
-          onClick={resetCamera}
-          title="รีเซ็ตมุมมอง"
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white backdrop-blur-md ring-1 ring-white/20 transition hover:bg-white/20"
-        >
-          <RotateCcw size={18} />
-        </button>
+        {/* Preset camera views */}
+        <div className="flex flex-col gap-1 rounded-xl bg-black/50 p-1.5 backdrop-blur-md ring-1 ring-white/10">
+          <button
+            onClick={() => setCameraView(0, 50, 0.1)}
+            title="มุมมองบน (Top)"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition hover:bg-white/20 hover:text-white"
+          >
+            <Compass size={15} />
+          </button>
+          <button
+            onClick={() => setCameraView(0, 25, 35)}
+            title="มุมมอง 3D (Isometric)"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition hover:bg-white/20 hover:text-white"
+          >
+            <Camera size={15} />
+          </button>
+          <button
+            onClick={() => setCameraView(45, 10, 0)}
+            title="มุมมองด้านข้าง (Side)"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition hover:bg-white/20 hover:text-white"
+          >
+            <Eye size={15} />
+          </button>
+          <div className="mx-1 border-t border-white/10" />
+          <button
+            onClick={resetCamera}
+            title="รีเซ็ตมุมมอง"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition hover:bg-white/20 hover:text-white"
+          >
+            <RotateCcw size={15} />
+          </button>
+        </div>
       </div>
 
-      {/* Instructions */}
-      <div className="absolute bottom-6 right-4 z-10 rounded-xl bg-black/50 px-4 py-2.5 text-xs text-gray-300 backdrop-blur-md ring-1 ring-white/10">
-        <p>🖱️ ลาก = หมุน | Scroll = ซูม | คลิกบูธ = รายละเอียด</p>
+      {/* Quick hint - bottom right */}
+      <div className="absolute bottom-6 right-4 z-10 rounded-xl bg-black/40 px-3 py-2 text-[11px] text-gray-400 backdrop-blur-md">
+        คลิกบูธเพื่อดูรายละเอียด • Scroll ซูม • ลากหมุน
       </div>
 
       {/* 3D Canvas */}
@@ -420,7 +482,6 @@ export default function MarketMap3D({ booths }: MarketMap3DProps) {
         shadows
         camera={{ position: [0, 25, 35], fov: 45 }}
         style={{ background: "linear-gradient(to bottom, #111827, #1f2937)" }}
-        onClick={() => setSelectedId(null)}
       >
         <Suspense fallback={null}>
           <Scene
@@ -430,21 +491,32 @@ export default function MarketMap3D({ booths }: MarketMap3DProps) {
           />
           <OrbitControls
             ref={controlsRef}
-            minDistance={5}
-            maxDistance={80}
-            maxPolarAngle={Math.PI / 2.1}
+            minDistance={3}
+            maxDistance={120}
             target={[0, 0, 0]}
             enablePan
+            enableDamping
+            dampingFactor={0.08}
           />
         </Suspense>
       </Canvas>
 
-      {/* Selected booth panel */}
+      {/* Booth Detail Popup Modal */}
       {selectedBooth && (
-        <div className="pointer-events-auto absolute right-4 top-1/2 z-20 w-72 -translate-y-1/2">
-          <div className="overflow-hidden rounded-2xl bg-gray-900/90 shadow-2xl ring-1 ring-white/10 backdrop-blur-xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedId(null)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+          {/* Modal */}
+          <div
+            className="relative w-full max-w-md animate-[fadeInUp_0.3s_ease-out] overflow-hidden rounded-3xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Image */}
-            <div className="relative h-40 w-full bg-gray-800">
+            <div className="relative h-52 w-full bg-gradient-to-br from-green-100 to-emerald-50">
               {selectedBooth.images[0] ? (
                 <img
                   src={selectedBooth.images[0].path}
@@ -453,89 +525,115 @@ export default function MarketMap3D({ booths }: MarketMap3DProps) {
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center">
-                  <Eye size={36} className="text-gray-600" />
+                  <div className="flex flex-col items-center gap-2 text-green-300">
+                    <Eye size={48} />
+                    <span className="text-sm font-medium">ไม่มีรูปภาพ</span>
+                  </div>
                 </div>
               )}
-              {/* Status */}
+
+              {/* Close button */}
+              <button
+                onClick={() => setSelectedId(null)}
+                className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60"
+              >
+                <X size={16} />
+              </button>
+
+              {/* Status badge */}
               <span
-                className={`absolute top-3 right-3 rounded-full px-2.5 py-1 text-xs font-bold ${
-                  !selectedBooth.is_available
-                    ? "bg-slate-400/90 text-white"
-                    : selectedBooth.isCurrentlyBooked
-                    ? "bg-amber-400/90 text-white"
-                    : "bg-green-400/90 text-white"
-                }`}
+                className={`absolute top-4 left-4 rounded-full px-3 py-1.5 text-xs font-bold shadow-lg ${!selectedBooth.is_available
+                  ? "bg-slate-500 text-white"
+                  : selectedBooth.isCurrentlyBooked
+                    ? "bg-amber-500 text-white"
+                    : "bg-green-500 text-white"
+                  }`}
               >
                 {!selectedBooth.is_available
                   ? "ปิดชั่วคราว"
                   : selectedBooth.isCurrentlyBooked
-                  ? "วันนี้ถูกจองแล้ว"
-                  : "ว่างอยู่"}
+                    ? "วันนี้ถูกจองแล้ว"
+                    : "✓ ว่างอยู่"}
               </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedId(null);
-                }}
-                className="absolute top-3 left-3 rounded-full bg-black/50 p-1.5 text-white hover:bg-black/70"
-              >
-                <X size={14} />
-              </button>
-            </div>
 
-            <div className="p-4">
-              <h3 className="mb-1 text-base font-bold text-white">
-                {selectedBooth.name}
-              </h3>
-              {selectedBooth.zone && (
-                <span
-                  className="mb-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
-                  style={{
-                    backgroundColor: `${selectedBooth.zone.color_code ?? "#f97316"}33`,
-                    color: selectedBooth.zone.color_code ?? "#f97316",
-                    border: `1px solid ${selectedBooth.zone.color_code ?? "#f97316"}55`,
-                  }}
-                >
-                  {selectedBooth.zone.name}
-                </span>
-              )}
-
-              <div className="mb-4 flex flex-col gap-1.5 text-sm text-gray-300">
-                <p className="flex items-center gap-2">
-                  <Ruler size={14} className="text-gray-500" />
-                  {selectedBooth.dimension}
-                </p>
-                <p className="flex items-center gap-2">
-                  <Star size={14} className="text-gray-500" />
-                  {selectedBooth._count.reviews} รีวิว
-                </p>
-                <p className="flex items-center gap-2">
-                  <MapPin size={14} className="text-gray-500" />
-                  ตำแหน่ง ({selectedBooth.position_x?.toFixed(1) ?? 0},{" "}
-                  {selectedBooth.position_z?.toFixed(1) ?? 0})
-                </p>
-              </div>
-
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <span className="text-xl font-extrabold text-orange-400">
+              {/* Price overlay */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-6 pb-4 pt-10">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-white">
                     ฿{selectedBooth.price.toLocaleString()}
                   </span>
-                  <span className="text-xs text-gray-500"> /วัน</span>
+                  <span className="text-sm font-medium text-white/70">/วัน</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Title + Zone */}
+              <div className="mb-4">
+                <h3 className="text-xl font-bold text-gray-900">
+                  {selectedBooth.name}
+                </h3>
+                {selectedBooth.zone && (
+                  <span
+                    className="mt-1.5 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+                    style={{
+                      backgroundColor: `${selectedBooth.zone.color_code ?? "#22c55e"}15`,
+                      color: selectedBooth.zone.color_code ?? "#22c55e",
+                      border: `1px solid ${selectedBooth.zone.color_code ?? "#22c55e"}30`,
+                    }}
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: selectedBooth.zone.color_code ?? "#22c55e" }}
+                    />
+                    {selectedBooth.zone.name}
+                  </span>
+                )}
+              </div>
+
+              {/* Info grid */}
+              <div className="mb-5 grid grid-cols-3 gap-3">
+                <div className="flex flex-col items-center rounded-2xl bg-gray-50 p-3">
+                  <Ruler size={18} className="mb-1 text-gray-400" />
+                  <span className="text-xs font-bold text-gray-700">{selectedBooth.dimension}</span>
+                  <span className="text-[10px] text-gray-400">ขนาด</span>
+                </div>
+                <div className="flex flex-col items-center rounded-2xl bg-gray-50 p-3">
+                  <Star size={18} className="mb-1 text-yellow-400" />
+                  <span className="text-xs font-bold text-gray-700">{selectedBooth._count.reviews}</span>
+                  <span className="text-[10px] text-gray-400">รีวิว</span>
+                </div>
+                <div className="flex flex-col items-center rounded-2xl bg-gray-50 p-3">
+                  <MapPin size={18} className="mb-1 text-green-400" />
+                  <span className="text-xs font-bold text-gray-700">
+                    {(selectedBooth.position_x ?? 0).toFixed(0)},{(selectedBooth.position_z ?? 0).toFixed(0)}
+                  </span>
+                  <span className="text-[10px] text-gray-400">ตำแหน่ง</span>
                 </div>
               </div>
 
-              <Link
-                href={`/customer/booths/${selectedBooth.id}`}
-                className="block w-full rounded-xl bg-orange-500 py-2.5 text-center text-sm font-bold text-white transition hover:bg-orange-600"
-              >
-                {selectedBooth.isCurrentlyBooked
-                  ? "ดูวันว่างที่เหลือ"
-                  : "ดูรายละเอียด / จอง"}
-              </Link>
+              {/* Action buttons */}
+              <div className="flex flex-col gap-2">
+                <Link
+                  href={`/customer/booths/${selectedBooth.id}`}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-green-500 py-3.5 text-sm font-bold text-white shadow-lg shadow-green-200 transition-all hover:bg-green-600 hover:shadow-green-300 active:scale-[0.98]"
+                >
+                  {selectedBooth.isCurrentlyBooked
+                    ? "ดูวันว่างที่เหลือ"
+                    : "ดูรายละเอียด / จองบูธนี้"}
+                </Link>
+                <button
+                  onClick={() => setSelectedId(null)}
+                  className="w-full rounded-2xl border border-gray-200 py-3 text-sm font-semibold text-gray-500 transition-all hover:bg-gray-50"
+                >
+                  กลับไปดูบูธอื่น
+                </button>
+              </div>
+
               {selectedBooth.isCurrentlyBooked && selectedBooth.is_available && (
-                <p className="mt-2 text-center text-[10px] text-amber-300/80">
-                  วันอื่นอาจยังว่างอยู่ กดเพื่อดูตารางการจอง
+                <p className="mt-3 text-center text-[11px] text-amber-600/80">
+                  💡 วันอื่นอาจยังว่างอยู่ กดเพื่อดูตารางการจอง
                 </p>
               )}
             </div>
