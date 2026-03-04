@@ -13,6 +13,7 @@ import {
   Navigation,
   MessageSquare,
   PenLine,
+  Map,
 } from "lucide-react";
 import Link from "next/link";
 import BookingModal from "./BookingModal";
@@ -93,14 +94,23 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
 
   return (
     <>
-      {/* Back button */}
-      <Link
-        href="/customer"
-        className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition-colors hover:text-orange-600"
-      >
-        <ArrowLeft size={16} />
-        กลับหน้าหลัก
-      </Link>
+      {/* Back buttons */}
+      <div className="mb-6 flex items-center gap-4">
+        <Link
+          href="/customer/map"
+          className="inline-flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-700 transition-colors hover:bg-green-100"
+        >
+          <Map size={16} />
+          กลับแผนผัง 3D
+        </Link>
+        <Link
+          href="/customer"
+          className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition-colors hover:text-orange-600"
+        >
+          <ArrowLeft size={16} />
+          กลับหน้าหลัก
+        </Link>
+      </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
         {/* Left: Gallery + Details + Map + Reviews */}
@@ -142,18 +152,17 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
                     <button
                       key={idx}
                       onClick={() => setCurrentImage(idx)}
-                      className={`h-2 rounded-full transition-all ${
-                        idx === currentImage
+                      className={`h-2 rounded-full transition-all ${idx === currentImage
                           ? "w-6 bg-white"
                           : "w-2 bg-white/50"
-                      }`}
+                        }`}
                     />
                   ))}
                 </div>
               </>
             )}
 
-       
+
           </div>
 
           {/* Thumbnail strip */}
@@ -163,11 +172,10 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
                 <button
                   key={img.id}
                   onClick={() => setCurrentImage(idx)}
-                  className={`h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg transition-all ${
-                    idx === currentImage
+                  className={`h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg transition-all ${idx === currentImage
                       ? "ring-2 ring-orange-500 ring-offset-2"
                       : "opacity-60 hover:opacity-100"
-                  }`}
+                    }`}
                 >
                   <Image
                     src={img.path}
@@ -371,11 +379,10 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
                         </div>
                         <div className="flex items-center gap-2">
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
-                              review.type === "BOOTH"
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${review.type === "BOOTH"
                                 ? "bg-blue-50 text-blue-600"
                                 : "bg-purple-50 text-purple-600"
-                            }`}
+                              }`}
                           >
                             {getLabelReviewType(
                               review as unknown as Parameters<
@@ -450,11 +457,10 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
             <button
               disabled={days === 0 || !booth.is_available}
               onClick={() => setShowBookingModal(true)}
-              className={`w-full rounded-xl py-4 text-sm font-bold tracking-wider uppercase transition-all ${
-                days > 0 && booth.is_available
+              className={`w-full rounded-xl py-4 text-sm font-bold tracking-wider uppercase transition-all ${days > 0 && booth.is_available
                   ? "bg-gray-900 text-white shadow-lg hover:bg-orange-600 hover:shadow-orange-200"
                   : "cursor-not-allowed bg-gray-100 text-gray-400"
-              }`}
+                }`}
             >
               {booth.is_available ? (
                 days > 0 ? (
