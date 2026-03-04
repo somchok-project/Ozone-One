@@ -169,6 +169,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             );
         }
 
+        // ── Guard: ถ้า booking ถูก CONFIRMED ไปแล้ว ไม่ให้อัพ slip ซ้ำ ──────
+        if (booking.booking_status === "CONFIRMED") {
+            return NextResponse.json(
+                { verified: false, message: "รายการจองนี้ได้รับการยืนยันแล้ว ไม่สามารถอัปโหลดสลิปซ้ำได้" },
+                { status: 400 },
+            );
+        }
+
         // ── Upload to MinIO ──────────────────────────────────────────────────
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
@@ -184,6 +192,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
         let verified = false;
         let verifyMessage = "";
+        let transRef: string | null = null;
 
         if (slipOkApiKey && slipOkBranchId) {
             try {
@@ -203,7 +212,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                 );
 
                 const result = (await response.json()) as {
-                    data?: { amount?: string | number };
+                    data?: {
+                        amount?: string | number;
+                        transRef?: string;
+                        transDate?: string;
+                        transTime?: string;
+                    };
                     message?: string;
                 };
 
@@ -212,11 +226,49 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                         ? Number(result.data.amount)
                         : null;
 
-                    if (slipAmount === null || slipAmount >= booking.total_price) {
+                    // ── เก็บ transRef สำหรับเช็ค slip ซ้ำ ──────────────────
+                    transRef = result.data.transRef ?? null;
+
+                    // ── เช็คยอดเงินตรง ─────────────────────────────────────
+                    if (slipAmount !== null && slipAmount < booking.total_price) {
+                        verifyMessage = `ยอดเงินไม่ตรง: สลิป ฿${slipAmount.toLocaleString()} / ต้องชำระ ฿${booking.total_price.toLocaleString()}`;
+                    }
+                    // ── เช็ค slip ซ้ำ (transRef เคยถูกใช้แล้ว) ────────────
+                    else if (transRef) {
+                        const existingBooking = await db.booking.findUnique({
+                            where: { payment_trans_ref: transRef },
+                        });
+                        if (existingBooking) {
+                            verifyMessage = "สลิปนี้ถูกใช้ยืนยันการชำระเงินไปแล้ว กรุณาใช้สลิปใหม่";
+                        } else {
+                            // ── เช็คว่าสลิปไม่เก่าเกิน 24 ชม. ──────────────
+                            const slipDate = result.data.transDate;
+                            const slipTime = result.data.transTime;
+                            if (slipDate && slipTime) {
+                                // SlipOK format: transDate = "20260304", transTime = "14:15:00"
+                                const year = slipDate.substring(0, 4);
+                                const month = slipDate.substring(4, 6);
+                                const day = slipDate.substring(6, 8);
+                                const transferDate = new Date(`${year}-${month}-${day}T${slipTime}+07:00`);
+                                const now = new Date();
+                                const hoursDiff = (now.getTime() - transferDate.getTime()) / (1000 * 60 * 60);
+
+                                if (hoursDiff > 24) {
+                                    verifyMessage = "สลิปโอนเกิน 24 ชั่วโมงแล้ว กรุณาโอนเงินใหม่และอัปโหลดสลิปใหม่";
+                                } else {
+                                    verified = true;
+                                    verifyMessage = "สลิปถูกต้อง ยืนยันการชำระเงินเรียบร้อย ✅";
+                                }
+                            } else {
+                                // ไม่มีข้อมูลวันที่ — ถือว่าผ่าน
+                                verified = true;
+                                verifyMessage = "สลิปถูกต้อง ยืนยันการชำระเงินเรียบร้อย ✅";
+                            }
+                        }
+                    } else {
+                        // ไม่มี transRef — ถือว่ายอดถูก = ผ่าน
                         verified = true;
                         verifyMessage = "สลิปถูกต้อง ยืนยันการชำระเงินเรียบร้อย ✅";
-                    } else {
-                        verifyMessage = `ยอดเงินไม่ตรง: สลิป ฿${slipAmount.toLocaleString()} / ต้องชำระ ฿${booking.total_price.toLocaleString()}`;
                     }
                 } else {
                     verifyMessage = result.message ?? "ไม่สามารถตรวจสอบสลิปได้ กรุณาลองใหม่";
@@ -241,6 +293,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                     payment_slip_url: publicUrl,
                     payment_status: "SUCCESS",
                     booking_status: "CONFIRMED",
+                    ...(transRef ? { payment_trans_ref: transRef } : {}),
                 },
                 include: {
                     user: { select: { name: true, email: true } },
@@ -271,7 +324,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
         console.error("Upload slip error:", errorMessage);
-        
+
         return NextResponse.json(
             { verified: false, message: "เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่" },
             { status: 500 },
