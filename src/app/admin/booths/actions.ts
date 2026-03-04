@@ -250,6 +250,53 @@ export async function updateBoothAction(id: string, formData: FormData) {
   }
 }
 
+// ─── 3D Layout helpers ────────────────────────────────────────────────────────
+
+export async function getBoothPositions() {
+  return db.booth.findMany({
+    select: {
+      id: true,
+      name: true,
+      dimension: true,
+      is_available: true,
+      position_x: true,
+      position_y: true,
+      position_z: true,
+      rotation_y: true,
+      scale: true,
+      zone: { select: { id: true, name: true, color_code: true } },
+    },
+    orderBy: { name: "asc" },
+  });
+}
+
+export async function updateBoothPositionAction(
+  id: string,
+  data: {
+    position_x: number;
+    position_y: number;
+    position_z: number;
+    rotation_y: number;
+  },
+) {
+  try {
+    await db.booth.update({
+      where: { id },
+      data: {
+        position_x: data.position_x,
+        position_y: data.position_y,
+        position_z: data.position_z,
+        rotation_y: data.rotation_y,
+      },
+    });
+    revalidatePath("/admin/booths");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating booth position:", error);
+    return { success: false, error: "Failed to update booth position" };
+  }
+}
+
 export async function deleteBoothAction(id: string) {
   try {
     await db.image.deleteMany({
