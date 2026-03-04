@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Store } from "lucide-react";
 import { db } from "@/server/db";
 import { BoothForm } from "../../_components/BoothForm";
+import { getBoothPositions } from "../../actions";
 import { notFound } from "next/navigation";
 
 export default async function EditBoothPage(props: {
@@ -19,7 +20,7 @@ export default async function EditBoothPage(props: {
     notFound();
   }
 
-  const [admins, zones] = await Promise.all([
+  const [admins, zones, allBoothPositions] = await Promise.all([
     db.user.findMany({
       where: { role: "ADMIN" },
       select: { id: true, name: true, email: true },
@@ -28,6 +29,7 @@ export default async function EditBoothPage(props: {
     db.zone.findMany({
       orderBy: { name: "asc" },
     }),
+    getBoothPositions(),
   ]);
 
   const adminOptions = admins.map((u) => ({
@@ -38,6 +40,15 @@ export default async function EditBoothPage(props: {
   const zoneOptions = zones.map((z) => ({
     value: z.id,
     label: z.name,
+  }));
+
+  const allBooths = allBoothPositions.map((b) => ({
+    ...b,
+    position_x: b.position_x ?? 0,
+    position_y: b.position_y ?? 0,
+    position_z: b.position_z ?? 0,
+    rotation_y: b.rotation_y ?? 0,
+    scale: b.scale ?? 1,
   }));
 
   // Map to a format suitable for the form
@@ -102,8 +113,10 @@ export default async function EditBoothPage(props: {
           admins={adminOptions}
           zones={zoneOptions}
           initialData={initialData}
+          allBooths={allBooths}
         />
       </div>
     </div>
   );
 }
+

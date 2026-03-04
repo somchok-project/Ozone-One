@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Save,
   MapPin,
+  MapPinned,
   Ruler,
   Info,
   DollarSign,
@@ -42,6 +43,18 @@ const BoothConfigurator3D = dynamic(() => import("./BoothConfigurator3D"), {
   ),
 });
 
+const MarketLayout3D = dynamic(() => import("./MarketLayout3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[420px] w-full flex-col items-center justify-center gap-3 rounded-[2rem] border border-slate-100 bg-slate-50">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"></div>
+      <span className="text-sm font-semibold tracking-wide text-slate-400">
+        กำลังโหลด 3D Market Layout...
+      </span>
+    </div>
+  ),
+});
+
 const MapPicker = dynamic(() => import("./MapPicker"), {
   ssr: false,
   loading: () => (
@@ -68,17 +81,24 @@ export interface BoothInitialData {
   is_available?: boolean;
   zone_id?: string | null;
   user_id?: string | null;
+  // 3D position fields
+  position_x?: number | null;
+  position_y?: number | null;
+  position_z?: number | null;
+  rotation_y?: number | null;
 }
 
 interface BoothFormProps {
   admins: { value: string; label: string }[];
   zones: { value: string; label: string }[];
   initialData?: BoothInitialData | null;
+  /** All booths for the market layout 3D (used to show context in single-booth mode) */
+  allBooths?: import("./MarketLayout3D").BoothPositionData[];
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-export function BoothForm({ admins, zones, initialData }: BoothFormProps) {
+export function BoothForm({ admins, zones, initialData, allBooths = [] }: BoothFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const isEditing = !!initialData?.id;
@@ -92,12 +112,12 @@ export function BoothForm({ admins, zones, initialData }: BoothFormProps) {
 
   const [boothItems, setBoothItems] = useState<BoothItem[]>(() => {
     if (!initialData?.booth_items) return [];
-    
+
     // เช็คกรณีข้อมูลมาเป็น Array อยู่แล้ว (Prisma Relation)
     if (Array.isArray(initialData.booth_items)) {
       return initialData.booth_items;
     }
-    
+
     // เช็คกรณีเป็น JSON String
     if (typeof initialData.booth_items === "string") {
       try {
@@ -106,13 +126,19 @@ export function BoothForm({ admins, zones, initialData }: BoothFormProps) {
         return [];
       }
     }
-    
+
     return [];
   });
 
   const [dimension, setDimension] = useState<string>(
     initialData?.dimension ?? "3x3",
   );
+
+  // 3D booth position
+  const [posX, setPosX] = useState<number>(Number(initialData?.position_x ?? 0));
+  const [posY, setPosY] = useState<number>(Number(initialData?.position_y ?? 0));
+  const [posZ, setPosZ] = useState<number>(Number(initialData?.position_z ?? 0));
+  const [rotY, setRotY] = useState<number>(Number(initialData?.rotation_y ?? 0));
 
   const statusOptions = [
     { value: "true", label: "ว่าง (พร้อมให้เช่า)" },
@@ -142,8 +168,8 @@ export function BoothForm({ admins, zones, initialData }: BoothFormProps) {
   }
 
   // การจัดการค่าเริ่มต้นแบบปลอดภัย
-  const defaultIsAvailable = initialData?.is_available !== undefined 
-    ? String(initialData.is_available) 
+  const defaultIsAvailable = initialData?.is_available !== undefined
+    ? String(initialData.is_available)
     : "true";
 
   return (
@@ -151,6 +177,10 @@ export function BoothForm({ admins, zones, initialData }: BoothFormProps) {
       {/* Hidden lat/lng for form submission */}
       <input type="hidden" name="latitude" value={lat} />
       <input type="hidden" name="longitude" value={lng} />
+      <input type="hidden" name="position_x" value={posX} />
+      <input type="hidden" name="position_y" value={posY} />
+      <input type="hidden" name="position_z" value={posZ} />
+      <input type="hidden" name="rotation_y" value={rotY} />
 
       {/* ─── Header & Action Bar ─── */}
       <div className="sticky top-0 z-30 flex flex-col gap-4 bg-[#FAFAFA]/80 py-4 backdrop-blur-md border-b border-slate-100 md:flex-row md:items-center md:justify-between">
@@ -319,6 +349,67 @@ export function BoothForm({ admins, zones, initialData }: BoothFormProps) {
           </div>
         </div>
       </div>
+
+      {/* ─── 3D Market Position (Full Width) ─── */}
+      {(allBooths.length > 0 || !isEditing) && (() => {
+        // For adding a new booth, inject a phantom booth so the admin can drag it
+        const NEW_BOOTH_ID = "__new_booth__";
+        const currentBoothId = isEditing ? initialData?.id : NEW_BOOTH_ID;
+
+        // Find a clear position for the new booth (offset from existing ones)
+        const existingXs = allBooths.map(b => b.position_x ?? 0);
+        const existingZs = allBooths.map(b => b.position_z ?? 0);
+        const spawnX = allBooths.length > 0 ? Math.max(...existingXs) + 5 : 0;
+        const spawnZ = allBooths.length > 0 ? Math.min(...existingZs) - 3 : 0;
+
+        const boothsForLayout = isEditing
+          ? allBooths
+          : [
+            ...allBooths,
+            {
+              id: NEW_BOOTH_ID,
+              name: "⭐ บูธใหม่",
+              dimension: dimension,
+              is_available: true,
+              position_x: posX !== 0 ? posX : spawnX,
+              position_y: posY,
+              position_z: posZ !== 0 ? posZ : spawnZ,
+              rotation_y: rotY,
+              scale: 1,
+              zone: null,
+            },
+          ];
+
+        return (
+          <Card className="mt-8 overflow-hidden rounded-[2rem] border border-slate-100/60 bg-white shadow-sm ring-1 ring-slate-900/5">
+            <CardHeader className="flex flex-col gap-1 border-b border-slate-50 px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="flex items-center gap-3 text-lg font-bold text-slate-800">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white">
+                  <MapPinned className="h-4 w-4" />
+                </div>
+                ตำแหน่งบูธในตลาด (3D)
+              </CardTitle>
+              <span className="text-xs font-medium text-slate-400">
+                ลากบูธเพื่อจัดตำแหน่งในแผนผังตลาด
+              </span>
+            </CardHeader>
+            <CardContent className="p-0 sm:p-2 sm:pb-2">
+              <MarketLayout3D
+                booths={boothsForLayout}
+                highlightBoothId={currentBoothId}
+                singleBoothMode
+                height="420px"
+                onPositionChange={(_id, pos, rot) => {
+                  setPosX(pos.x);
+                  setPosY(pos.y);
+                  setPosZ(pos.z);
+                  setRotY(rot);
+                }}
+              />
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* ─── 3D Booth Configurator (Full Width) ─── */}
       <Card className="mt-8 overflow-hidden rounded-[2rem] border border-slate-100/60 bg-white shadow-sm ring-1 ring-slate-900/5">
