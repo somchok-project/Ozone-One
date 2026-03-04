@@ -169,6 +169,7 @@ model Booking {
     payment_status   PaymentStatus @default(PENDING)
     booking_status   BookingStatus @default(PENDING)
     payment_slip_url String?
+    payment_trans_ref String?       @unique // SlipOK transRef — ป้องกันใช้ slip ซ้ำ
 
     user_id String @db.Uuid
     user    User   @relation(fields: [user_id], references: [id])
