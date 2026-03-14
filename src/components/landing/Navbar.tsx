@@ -3,12 +3,19 @@
 import Link from "next/link";
 import Image from "next/image";
 import { User, Menu } from "lucide-react"; // เพิ่ม Menu icon สำหรับ mobile
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Navbar() {
-  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-    // Only handle hash links
-    const href = e.currentTarget.href;
-    const targetId = href.replace(/.*\#/, "");
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    e.preventDefault();
+    if (pathname !== "/") {
+      router.push(`/#${targetId}`);
+      return;
+    }
+
     const elem = document.getElementById(targetId);
     if (elem) {
       e.preventDefault();
@@ -36,14 +43,19 @@ export default function Navbar() {
           {/* 2. Desktop Menu (Center Aligned for Balance) */}
           <div className="hidden items-center space-x-10 md:flex">
             {[
-              { name: "ภาพรวมตลาด", href: "#overview" },
-              { name: "จองบูธ", href: "#booths" },
+              { name: "ภาพรวมตลาด", href: "/#overview" },
+              { name: "จองบูธ", href: "/#booths" },
               { name: "ติดต่อเรา", href: "/contact" },
             ].map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                onClick={item.href.startsWith("#") ? handleScroll : undefined}
+                onClick={(e) => {
+                  if (item.href.includes("#")) {
+                    const targetId = item.href.split("#")[1];
+                    if (targetId) handleScroll(e, targetId);
+                  }
+                }}
                 className="group relative text-sm font-medium text-slate-600 transition-colors hover:text-orange-600"
               >
                 {item.name}

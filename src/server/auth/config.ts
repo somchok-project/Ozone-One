@@ -7,6 +7,7 @@ import { db } from "@/server/db";
 import bcrypt from "bcryptjs";
 import { loginSchema } from "@/lib/validations/auth";
 import { type DefaultJWT } from "next-auth/jwt";
+import { env } from "@/env";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -45,8 +46,8 @@ declare module "next-auth/jwt" {
 export const authConfig = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_SECRET,
       allowDangerousEmailAccountLinking: true,
       profile: (profile: GoogleProfile) => {
         return {
@@ -54,7 +55,7 @@ export const authConfig = {
           name: profile.name,
           email: profile.email,
           image: profile.picture,
-          role: "USER", // Default role for new users
+          role: "CUSTOMER",
         };
       },
     }),
@@ -86,6 +87,8 @@ export const authConfig = {
     }),
   ],
   adapter: PrismaAdapter(db as any),
+  secret: env.AUTH_SECRET,
+  trustHost: true,
   session: {
     strategy: "jwt",
   },
@@ -123,7 +126,7 @@ export const authConfig = {
     jwt: async ({ token, user, trigger, session }) => {
       if (user) {
         token.id = user.id!;
-        token.role = user.role ?? "USER";
+        token.role = user.role ?? "CUSTOMER";
         token.phoneNumber = user.phone_number;
       }
 
