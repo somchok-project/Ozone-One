@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Facebook, Phone } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -10,11 +11,24 @@ export default function Footer() {
             © 2024 ตลาดโอโซนวัน. All rights reserved.
           </p>
         </div>
-        <div className="flex space-x-6 text-sm text-gray-500">
-          <Link href="#" className="hover:text-orange-600">
+        <div className="flex items-center space-x-6 text-sm text-gray-500">
+          <Link
+            href="https://www.facebook.com/Ozoneonenightmarket"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-blue-600 transition-colors"
+          >
+            <span className="sr-only">Facebook</span>
+            <Facebook className="h-5 w-5" />
+          </Link>
+          <div className="flex items-center gap-2 text-gray-500">
+            <Phone className="h-5 w-5" />
+            <span>094-528-5777​</span>
+          </div>
+          <Link href="#" className="hover:text-orange-600 transition-colors">
             เงื่อนไขการใช้บริการ
           </Link>
-          <Link href="#" className="hover:text-orange-600">
+          <Link href="#" className="hover:text-orange-600 transition-colors">
             นโยบายความเป็นส่วนตัว
           </Link>
         </div>

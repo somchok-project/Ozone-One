@@ -68,7 +68,7 @@ export async function register(prevState: any, formData: FormData) {
         email,
         password: hashedPassword,
         phone_number: phone,
-        role: "USER" as any,
+        role: "CUSTOMER",
       },
     });
 
