@@ -217,6 +217,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                         transRef?: string;
                         transDate?: string;
                         transTime?: string;
+                        receiver?: {
+                            displayName?: string;
+                            name?: string;
+                            proxy?: { type?: string | null; value?: string | null };
+                            account?: { type?: string; value?: string };
+                        };
+                        sender?: { displayName?: string; name?: string };
                     };
                     message?: string;
                 };
@@ -229,8 +236,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                     // ── เก็บ transRef สำหรับเช็ค slip ซ้ำ ──────────────────
                     transRef = result.data.transRef ?? null;
 
+                    // ── เช็คบัญชีผู้รับตรงกับ PromptPay ของร้าน ──────────
+                    const expectedPromptPay = process.env.NEXT_PUBLIC_PROMPTPAY_ID ?? "";
+                    const expectedSuffix = expectedPromptPay.slice(-4); // เช็คท้าย 4 หลัก
+                    const receiverProxy = result.data.receiver?.proxy?.value ?? "";
+                    const receiverAccount = result.data.receiver?.account?.value ?? "";
+                    const receiverMatches =
+                        !expectedSuffix || // ไม่มี config → ข้าม
+                        receiverProxy.endsWith(expectedSuffix) ||
+                        receiverAccount.replace(/-/g, "").endsWith(expectedSuffix);
+
+                    if (!receiverMatches) {
+                        verifyMessage = "สลิปโอนไปยังบัญชีผู้รับที่ไม่ถูกต้อง กรุณาตรวจสอบบัญชีปลายทาง";
+                    }
                     // ── เช็คยอดเงินตรง ─────────────────────────────────────
-                    if (slipAmount !== null && slipAmount < booking.total_price) {
+                    else if (slipAmount !== null && slipAmount < booking.total_price) {
                         verifyMessage = `ยอดเงินไม่ตรง: สลิป ฿${slipAmount.toLocaleString()} / ต้องชำระ ฿${booking.total_price.toLocaleString()}`;
                     }
                     // ── เช็ค slip ซ้ำ (transRef เคยถูกใช้แล้ว) ────────────
