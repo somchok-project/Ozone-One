@@ -18,10 +18,21 @@ export default function BookingCalendar({
 }: BookingCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Helper to normalize date to YYYY-MM-DD
+  // Helper to normalize date to YYYY-MM-DD (local timezone)
   const formatDateKey = (date: Date) => {
-    return date.toISOString().split("T")[0]!;
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
   };
+
+  // Minimum selectable date = tomorrow (must book at least 1 day in advance)
+  const minBookingDate = useMemo(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow;
+  }, []);
 
   const bookedDates = useMemo(() => {
     const dates = new Set<string>();
@@ -58,16 +69,20 @@ export default function BookingCalendar({
   const handleDateClick = (date: Date) => {
     const dateStr = formatDateKey(date);
     if (bookedDates.has(dateStr)) return;
+    if (date < minBookingDate) return;
 
-    if (!selectedStart || (selectedStart && selectedEnd)) {
-      onSelectRange(dateStr, "");
+    // No selection yet, or a range is already selected → start new single-day selection
+    if (!selectedStart || (selectedStart && selectedEnd && selectedStart !== selectedEnd)) {
+      onSelectRange(dateStr, dateStr);
     } else {
-      // Logic to prevent range from crossing booked dates
+      // Single-day is selected (start === end) → extend to range
+      if (dateStr === selectedStart) return; // clicked same date, ignore
+
       const start = new Date(selectedStart);
       const end = new Date(dateStr);
-
       const [realStart, realEnd] = start < end ? [start, end] : [end, start];
 
+      // Check for booked dates within the range
       let hasOverlap = false;
       const temp = new Date(realStart);
       while (temp <= realEnd) {
@@ -79,7 +94,7 @@ export default function BookingCalendar({
       }
 
       if (hasOverlap) {
-        onSelectRange(dateStr, "");
+        onSelectRange(dateStr, dateStr);
       } else {
         onSelectRange(formatDateKey(realStart), formatDateKey(realEnd));
       }
@@ -147,6 +162,8 @@ export default function BookingCalendar({
 
           const dateStr = formatDateKey(date);
           const booked = bookedDates.has(dateStr);
+          const isPast = date < minBookingDate;
+          const disabled = booked || isPast;
           const selected = isSelected(dateStr);
           const range = isInRange(dateStr);
           const isToday = formatDateKey(new Date()) === dateStr;
@@ -154,9 +171,9 @@ export default function BookingCalendar({
           return (
             <button
               key={dateStr}
-              disabled={booked}
+              disabled={disabled}
               onClick={() => handleDateClick(date)}
-              className={`relative flex h-10 w-full items-center justify-center rounded-xl text-sm font-medium transition-all ${booked ? "cursor-not-allowed bg-gray-50/50 text-gray-300 line-through" : "hover:bg-orange-50 hover:text-orange-600"} ${selected ? "z-10 scale-105 bg-orange-500 text-white shadow-md hover:bg-orange-600 hover:text-white" : ""} ${range ? "rounded-none bg-orange-100 text-orange-700 first:rounded-l-xl last:rounded-r-xl" : ""} ${isToday && !selected ? "ring-1 ring-orange-200" : ""} `}
+              className={`relative flex h-10 w-full items-center justify-center rounded-xl text-sm font-medium transition-all ${booked ? "cursor-not-allowed bg-red-50 text-red-300 line-through" : isPast ? "cursor-not-allowed text-gray-300" : "hover:bg-orange-50 hover:text-orange-600"} ${selected ? "z-10 scale-105 bg-orange-500 text-white shadow-md hover:bg-orange-600 hover:text-white" : ""} ${range ? "rounded-none bg-orange-100 text-orange-700 first:rounded-l-xl last:rounded-r-xl" : ""} ${isToday && !selected ? "ring-1 ring-orange-200" : ""} `}
             >
               {date.getDate()}
               {isToday && !selected && (
@@ -167,9 +184,13 @@ export default function BookingCalendar({
         })}
       </div>
 
-      <div className="mt-6 flex items-center justify-between gap-4 border-t border-gray-50 pt-4">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-gray-50 pt-4">
         <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded-full bg-gray-200 line-through" />
+          <div className="h-3 w-3 rounded-full bg-gray-200" />
+          <span className="text-[11px] font-medium text-gray-500">ผ่านแล้ว</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-3 w-3 rounded-full bg-red-200" />
           <span className="text-[11px] font-medium text-gray-500">จองแล้ว</span>
         </div>
         <div className="flex items-center gap-1.5">
