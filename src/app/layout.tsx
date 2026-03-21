@@ -20,7 +20,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="th" className={`${notoSansThai.variable}`}>
+    <html lang="th" className={`${notoSansThai.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-gray-50 font-sans">
         <TRPCReactProvider>
           {/* <Navbar /> */}
