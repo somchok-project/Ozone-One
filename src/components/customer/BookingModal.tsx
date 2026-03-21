@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   X,
   CheckCircle,
@@ -20,6 +20,7 @@ import { toast } from "sonner";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 const PROMPTPAY_ID = process.env.NEXT_PUBLIC_PROMPTPAY_ID ?? "";
+const BOOKING_EXPIRE_SECONDS = 10 * 60; // 10 minutes
 
 interface BookingModalProps {
   booth: {
@@ -43,18 +44,20 @@ export default function BookingModal({
   onClose,
 }: BookingModalProps) {
   const [step, setStep] = useState<
-    "confirm" | "payment" | "uploading" | "success" | "error"
+    "confirm" | "payment" | "uploading" | "success" | "error" | "expired"
   >("confirm");
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [bookingId, setBookingId] = useState<string>("");
   const [slipPreview, setSlipPreview] = useState<string>("");
   const [verifyMessage, setVerifyMessage] = useState<string>("");
+  const [timeLeft, setTimeLeft] = useState(BOOKING_EXPIRE_SECONDS);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const createBooking = api.booking.create.useMutation({
     onSuccess: (data) => {
       setBookingId(data.id);
+      setTimeLeft(BOOKING_EXPIRE_SECONDS);
       setStep("payment");
     },
   });
@@ -65,6 +68,31 @@ export default function BookingModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
+
+  // Countdown timer — expires after 10 minutes
+  useEffect(() => {
+    if (step !== "payment") return;
+    if (timeLeft <= 0) {
+      setStep("expired");
+      return;
+    }
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [step, timeLeft]);
+
+  const formatTimer = useCallback((seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }, []);
 
   async function generateQR() {
     try {
@@ -85,10 +113,13 @@ export default function BookingModal({
   }
 
   function handleConfirmBooking() {
+    // Parse YYYY-MM-DD as local dates (avoid UTC offset shift)
+    const [sy, sm, sd] = startDate.split("-").map(Number);
+    const [ey, em, ed] = endDate.split("-").map(Number);
     createBooking.mutate({
       booth_id: booth.id,
-      start_date: new Date(startDate).toISOString(),
-      end_date: new Date(endDate).toISOString(),
+      start_date: new Date(sy!, sm! - 1, sd).toISOString(),
+      end_date: new Date(ey!, em! - 1, ed).toISOString(),
     });
   }
 
@@ -154,13 +185,16 @@ export default function BookingModal({
     }
   }
 
-  // Helper formatting
-  const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("th-TH", {
+  // Helper formatting — parse YYYY-MM-DD as local date (avoid UTC offset shift)
+  const formatDate = (d: string) => {
+    const [y, m, day] = d.split("-").map(Number);
+    const local = new Date(y!, m! - 1, day);
+    return local.toLocaleDateString("th-TH", {
       day: "numeric",
       month: "short",
       year: "2-digit",
     });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 p-4 backdrop-blur-sm">
@@ -205,12 +239,18 @@ export default function BookingModal({
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">วันที่จอง</span>
                     <span className="font-medium text-gray-800">
-                      {formatDate(startDate)}{" "}
-                      <ArrowRight
-                        className="mx-1 inline text-gray-300"
-                        size={12}
-                      />{" "}
-                      {formatDate(endDate)}
+                      {startDate === endDate ? (
+                        formatDate(startDate)
+                      ) : (
+                        <>
+                          {formatDate(startDate)}{" "}
+                          <ArrowRight
+                            className="mx-1 inline text-gray-300"
+                            size={12}
+                          />{" "}
+                          {formatDate(endDate)}
+                        </>
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -279,6 +319,11 @@ export default function BookingModal({
                     {(bookingId.split("-")[0] || "").toUpperCase()}
                   </span>
                 </p>
+                {/* Countdown Timer */}
+                <div className={`mt-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold ${timeLeft <= 120 ? "animate-pulse bg-red-50 text-red-600" : "bg-orange-50 text-orange-600"}`}>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  เหลือเวลา {formatTimer(timeLeft)}
+                </div>
               </div>
 
               {/* QR Code Card */}
@@ -475,6 +520,33 @@ export default function BookingModal({
                   className="w-full rounded-2xl bg-white py-3.5 text-sm font-bold text-gray-500 transition-all hover:bg-gray-50 hover:text-gray-700"
                 >
                   ยกเลิก
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 6: EXPIRED ──────────────────────────────────────── */}
+          {step === "expired" && (
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-amber-50 text-amber-500 ring-4 ring-amber-50/50">
+                <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+              <h3 className="mb-2 text-xl font-extrabold tracking-tight text-gray-900">
+                หมดเวลาชำระเงิน
+              </h3>
+              <p className="mb-2 text-sm text-gray-500">
+                การจองของคุณถูกยกเลิกอัตโนมัติ
+              </p>
+              <p className="mb-8 text-sm text-amber-600/80">
+                เนื่องจากไม่ได้ชำระเงินภายใน 10 นาที
+              </p>
+
+              <div className="flex w-full flex-col gap-3">
+                <button
+                  onClick={onClose}
+                  className="w-full rounded-2xl bg-gray-900 py-4 text-sm font-bold text-white shadow-lg transition-all hover:bg-gray-800"
+                >
+                  ปิดและจองใหม่
                 </button>
               </div>
             </div>
