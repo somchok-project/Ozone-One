@@ -54,6 +54,120 @@ interface MarketMap3DProps {
   booths: BoothMapData[];
 }
 
+// ── Decorative: Tree ──────────────────────────────────────────────
+function MarketTree({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* Trunk */}
+      <mesh position={[0, 0.6, 0]} castShadow>
+        <cylinderGeometry args={[0.08, 0.12, 1.2, 8]} />
+        <meshStandardMaterial color="#8B5E3C" roughness={0.9} />
+      </mesh>
+      {/* Foliage layers */}
+      <mesh position={[0, 1.4, 0]} castShadow>
+        <sphereGeometry args={[0.5, 8, 8]} />
+        <meshStandardMaterial color="#2d6a4f" roughness={0.8} />
+      </mesh>
+      <mesh position={[0, 1.8, 0]} castShadow>
+        <sphereGeometry args={[0.35, 8, 8]} />
+        <meshStandardMaterial color="#40916c" roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+// ── Decorative: Lantern ───────────────────────────────────────────
+function Lantern({ position, color = "#fbbf24" }: { position: [number, number, number]; color?: string }) {
+  return (
+    <group position={position}>
+      {/* Pole */}
+      <mesh position={[0, 1.5, 0]}>
+        <cylinderGeometry args={[0.03, 0.03, 3, 6]} />
+        <meshStandardMaterial color="#374151" metalness={0.6} roughness={0.3} />
+      </mesh>
+      {/* Lamp housing */}
+      <mesh position={[0, 3.1, 0]}>
+        <cylinderGeometry args={[0.15, 0.2, 0.4, 8]} />
+        <meshStandardMaterial color="#1f2937" metalness={0.4} roughness={0.4} />
+      </mesh>
+      {/* Glow bulb */}
+      <mesh position={[0, 2.85, 0]}>
+        <sphereGeometry args={[0.12, 8, 8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
+      </mesh>
+    </group>
+  );
+}
+
+// ── Decorative: Bench ─────────────────────────────────────────────
+function Bench({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      {/* Seat */}
+      <mesh position={[0, 0.35, 0]} castShadow>
+        <boxGeometry args={[1.0, 0.06, 0.35]} />
+        <meshStandardMaterial color="#92400e" roughness={0.8} />
+      </mesh>
+      {/* Legs */}
+      {[-0.4, 0.4].map((x) => (
+        <mesh key={x} position={[x, 0.17, 0]} castShadow>
+          <boxGeometry args={[0.06, 0.34, 0.3]} />
+          <meshStandardMaterial color="#374151" metalness={0.5} roughness={0.4} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// ── Decorative: Market Entrance Gate ──────────────────────────────
+function EntranceGate({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* Left pillar */}
+      <mesh position={[-3, 2, 0]} castShadow>
+        <boxGeometry args={[0.5, 4, 0.5]} />
+        <meshStandardMaterial color="#dc2626" roughness={0.5} />
+      </mesh>
+      {/* Right pillar */}
+      <mesh position={[3, 2, 0]} castShadow>
+        <boxGeometry args={[0.5, 4, 0.5]} />
+        <meshStandardMaterial color="#dc2626" roughness={0.5} />
+      </mesh>
+      {/* Top beam */}
+      <mesh position={[0, 4.1, 0]} castShadow>
+        <boxGeometry args={[7, 0.4, 0.6]} />
+        <meshStandardMaterial color="#991b1b" roughness={0.5} />
+      </mesh>
+      {/* Roof / Chinese-style top */}
+      <mesh position={[0, 4.6, 0]} castShadow>
+        <boxGeometry args={[7.5, 0.15, 1.0]} />
+        <meshStandardMaterial color="#7f1d1d" roughness={0.5} />
+      </mesh>
+      {/* Sign */}
+      <Text
+        position={[0, 3.5, 0.32]}
+        fontSize={0.55}
+        color="#fef08a"
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.03}
+        outlineColor="#000000"
+      >
+        OZONE ONE MARKET
+      </Text>
+      {/* Decorative lanterns */}
+      <mesh position={[-2, 3.7, 0.3]}>
+        <sphereGeometry args={[0.15, 8, 8]} />
+        <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={1} />
+      </mesh>
+      <mesh position={[2, 3.7, 0.3]}>
+        <sphereGeometry args={[0.15, 8, 8]} />
+        <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={1} />
+      </mesh>
+    </group>
+  );
+}
+
 // ── Booth mesh component ──────────────────────────────────────────
 function BoothMesh({
   booth,
@@ -64,7 +178,7 @@ function BoothMesh({
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
 
   const px = booth.position_x ?? 0;
@@ -73,90 +187,109 @@ function BoothMesh({
   const sc = booth.scale ?? 1;
   const ry = booth.rotation_y ?? 0;
 
-  // Derive colour: grey=closed, green=available
-  const baseColor = !booth.is_available
-    ? new THREE.Color("#94a3b8")
-    : new THREE.Color("#22c55e");
+  const isAvailable = booth.is_available;
+  const isBooked = booth.isCurrentlyBooked;
+  const isClosed = !isAvailable;
+
+  // Awning color: เขียว = จองได้, เทา = ปิดชั่วคราว
+  const awningColor = isClosed ? "#6b7280" : "#16a34a";
+
+  // Counter color: เขียว = จองได้, เทา = ปิดชั่วคราว
+  const counterColor = isClosed ? "#9ca3af" : "#22c55e";
 
   const selectedColor = new THREE.Color("#fbbf24");
-  const hoveredColor = baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.3);
-  const finalColor = isSelected
-    ? selectedColor
-    : hovered
-      ? hoveredColor
-      : baseColor;
+  const highlightIntensity = isSelected ? 0.4 : 0;
 
-  useFrame((_, delta) => {
-    if (!meshRef.current) return;
+  useFrame(() => {
+    if (!groupRef.current) return;
     if (isSelected || hovered) {
-      meshRef.current.position.y = py + Math.sin(Date.now() * 0.003) * 0.05 + 0.05;
+      groupRef.current.position.y = Math.sin(Date.now() * 0.003) * 0.04;
     } else {
-      meshRef.current.position.y = py;
+      groupRef.current.position.y = 0;
     }
   });
 
   return (
-    <group position={[px, 0, pz]} rotation={[0, ry, 0]}>
-      {/* Base slab */}
+    <group ref={groupRef} position={[px, 0, pz]} rotation={[0, ry, 0]}>
+      {/* Floor / Base platform */}
       <mesh
-        ref={meshRef}
-        position={[0, py + 0.5 * sc, 0]}
+        position={[0, 0.02, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        onPointerEnter={() => { setHovered(true); document.body.style.cursor = "pointer"; }}
+        onPointerLeave={() => { setHovered(false); document.body.style.cursor = "auto"; }}
+      >
+        <planeGeometry args={[2.0 * sc, 2.0 * sc]} />
+        <meshStandardMaterial color={isClosed ? "#4b5563" : "#e5e7eb"} roughness={0.9} />
+      </mesh>
+
+      {/* Counter / Table */}
+      <mesh
+        position={[0, 0.4 * sc, 0]}
         scale={[sc, sc, sc]}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        onPointerEnter={() => {
-          setHovered(true);
-          document.body.style.cursor = "pointer";
-        }}
-        onPointerLeave={() => {
-          setHovered(false);
-          document.body.style.cursor = "auto";
-        }}
         castShadow
         receiveShadow
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        onPointerEnter={() => { setHovered(true); document.body.style.cursor = "pointer"; }}
+        onPointerLeave={() => { setHovered(false); document.body.style.cursor = "auto"; }}
       >
-        <boxGeometry args={[1.8, 1, 1.8]} />
+        <boxGeometry args={[1.8, 0.8, 1.4]} />
         <meshStandardMaterial
-          color={finalColor}
-          roughness={0.4}
-          metalness={0.1}
+          color={counterColor}
+          roughness={0.7}
           emissive={isSelected ? selectedColor : new THREE.Color(0)}
-          emissiveIntensity={isSelected ? 0.3 : 0}
+          emissiveIntensity={highlightIntensity}
         />
       </mesh>
 
-      {/* Roof */}
-      <mesh position={[0, py + sc * 1.1, 0]} scale={[sc, sc * 0.3, sc]}>
-        <coneGeometry args={[1.3, 0.8, 4]} />
+      {/* Front display shelf */}
+      <mesh position={[0, 0.85 * sc, 0.55 * sc]} scale={[sc, sc, sc]} castShadow>
+        <boxGeometry args={[1.6, 0.08, 0.3]} />
+        <meshStandardMaterial color="#92400e" roughness={0.8} />
+      </mesh>
+
+      {/* Left pole */}
+      <mesh position={[-0.85 * sc, 1.2 * sc, -0.65 * sc]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 2.4 * sc, 6]} />
+        <meshStandardMaterial color="#374151" metalness={0.5} roughness={0.4} />
+      </mesh>
+      {/* Right pole */}
+      <mesh position={[0.85 * sc, 1.2 * sc, -0.65 * sc]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 2.4 * sc, 6]} />
+        <meshStandardMaterial color="#374151" metalness={0.5} roughness={0.4} />
+      </mesh>
+
+      {/* Awning / Canopy */}
+      <mesh position={[0, 2.3 * sc, 0]} castShadow>
+        <boxGeometry args={[2.1 * sc, 0.06, 2.0 * sc]} />
         <meshStandardMaterial
-          color={finalColor}
+          color={awningColor}
           roughness={0.6}
           emissive={isSelected ? selectedColor : new THREE.Color(0)}
-          emissiveIntensity={isSelected ? 0.2 : 0}
+          emissiveIntensity={highlightIntensity}
         />
       </mesh>
+      {/* Awning front drape */}
+      <mesh position={[0, 2.2 * sc, 0.97 * sc]} castShadow>
+        <boxGeometry args={[2.1 * sc, 0.2, 0.04]} />
+        <meshStandardMaterial color={awningColor} roughness={0.7} />
+      </mesh>
 
-      {/* Door */}
-      <mesh position={[0, py + 0.3 * sc, 0.91 * sc]} scale={[sc, sc, sc]}>
-        <boxGeometry args={[0.4, 0.6, 0.05]} />
+      {/* Status indicator dot */}
+      <mesh position={[0.7 * sc, 0.85 * sc, 0.71 * sc]}>
+        <sphereGeometry args={[0.08, 8, 8]} />
         <meshStandardMaterial
-          color={
-            !booth.is_available
-              ? "#94a3b8"
-              : booth.isCurrentlyBooked
-                ? "#f87171"
-                : "#4ade80"
-          }
-          roughness={0.5}
+          color={isClosed ? "#94a3b8" : isBooked ? "#ef4444" : "#22c55e"}
+          emissive={isClosed ? "#94a3b8" : isBooked ? "#ef4444" : "#22c55e"}
+          emissiveIntensity={0.8}
         />
       </mesh>
 
       {/* Floating label */}
       <Text
-        position={[0, py + sc * 2.0, 0]}
-        fontSize={0.25}
+        position={[0, 2.7 * sc, 0]}
+        fontSize={0.22}
         color={isSelected ? "#fbbf24" : "#ffffff"}
         anchorX="center"
         anchorY="middle"
@@ -169,8 +302,8 @@ function BoothMesh({
 
       {/* Price tag */}
       <Text
-        position={[0, py + sc * 1.7, 0]}
-        fontSize={0.18}
+        position={[0, 2.45 * sc, 0]}
+        fontSize={0.16}
         color="#d1fae5"
         anchorX="center"
         anchorY="middle"
@@ -179,6 +312,14 @@ function BoothMesh({
       >
         {`฿${booth.price.toLocaleString()}/วัน`}
       </Text>
+
+      {/* Selection ring */}
+      {isSelected && (
+        <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[1.2 * sc, 1.35 * sc, 32]} />
+          <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={1} transparent opacity={0.7} side={THREE.DoubleSide} />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -242,30 +383,44 @@ function Scene({
 
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.5} />
+      {/* Lighting — warm market ambiance */}
+      <ambientLight intensity={0.4} color="#fff5eb" />
       <directionalLight
-        position={[10, 20, 10]}
-        intensity={1.5}
+        position={[15, 25, 10]}
+        intensity={1.2}
         castShadow
         shadow-mapSize={[2048, 2048]}
+        shadow-camera-near={0.5}
+        shadow-camera-far={80}
+        shadow-camera-left={-30}
+        shadow-camera-right={30}
+        shadow-camera-top={30}
+        shadow-camera-bottom={-30}
+        color="#fef3c7"
       />
-      <pointLight position={[-10, 15, -10]} intensity={0.5} color="#fde68a" />
+      <pointLight position={[-10, 15, -10]} intensity={0.4} color="#fde68a" />
+      <hemisphereLight args={["#87ceeb", "#4a3728", 0.3]} />
 
-      {/* Environment */}
-      <Environment preset="city" />
+      {/* Sky / Environment */}
+      <Environment preset="sunset" />
 
-      {/* Ground */}
+      {/* Main ground plane — concrete market floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+        <planeGeometry args={[80, 80]} />
+        <meshStandardMaterial color="#4a4a4a" roughness={0.95} metalness={0.05} />
+      </mesh>
+
+      {/* Subtle grid overlay */}
       <Grid
-        args={[100, 100]}
+        args={[80, 80]}
         cellSize={2}
-        cellThickness={0.5}
-        cellColor="#4b5563"
+        cellThickness={0.3}
+        cellColor="#555555"
         sectionSize={10}
-        sectionThickness={1}
-        sectionColor="#6b7280"
-        fadeDistance={80}
-        fadeStrength={1}
+        sectionThickness={0.6}
+        sectionColor="#666666"
+        fadeDistance={60}
+        fadeStrength={1.5}
         infiniteGrid
       />
 
@@ -323,18 +478,44 @@ function Scene({
         );
       })}
 
-      {/* Market entrance */}
-      <Text
-        position={[0, 0.05, 20]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={1}
-        color="#f97316"
-        anchorX="center"
-        outlineWidth={0.08}
-        outlineColor="#000000"
-      >
-        ทางเข้าตลาด
-      </Text>
+      {/* ═══ Market Entrance Gate ═══ */}
+      <EntranceGate position={[0, 0, 22]} />
+
+      {/* ═══ Decorative Trees ═══ */}
+      <MarketTree position={[-8, 0, 18]} />
+      <MarketTree position={[8, 0, 18]} />
+      <MarketTree position={[-12, 0, 5]} />
+      <MarketTree position={[12, 0, 5]} />
+      <MarketTree position={[-12, 0, -8]} />
+      <MarketTree position={[12, 0, -8]} />
+      <MarketTree position={[-6, 0, -18]} />
+      <MarketTree position={[6, 0, -18]} />
+
+      {/* ═══ Lanterns along pathways ═══ */}
+      <Lantern position={[-5, 0, 15]} color="#fbbf24" />
+      <Lantern position={[5, 0, 15]} color="#fb923c" />
+      <Lantern position={[-5, 0, 0]} color="#fbbf24" />
+      <Lantern position={[5, 0, 0]} color="#fb923c" />
+      <Lantern position={[-5, 0, -12]} color="#fbbf24" />
+      <Lantern position={[5, 0, -12]} color="#fb923c" />
+
+      {/* ═══ Benches for resting ═══ */}
+      <Bench position={[-10, 0, 10]} rotation={Math.PI / 2} />
+      <Bench position={[10, 0, 10]} rotation={-Math.PI / 2} />
+      <Bench position={[-10, 0, -4]} rotation={Math.PI / 2} />
+      <Bench position={[10, 0, -4]} rotation={-Math.PI / 2} />
+
+      {/* ═══ Pathway markings ═══ */}
+      {/* Central walkway */}
+      <mesh position={[0, 0.005, 5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[3, 35]} />
+        <meshStandardMaterial color="#78716c" roughness={0.95} />
+      </mesh>
+      {/* Horizontal path */}
+      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[25, 2]} />
+        <meshStandardMaterial color="#78716c" roughness={0.95} />
+      </mesh>
 
       {/* Booths */}
       {booths.map((booth) => (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -24,6 +24,49 @@ import { formatThaiDate } from "@/lib/utils/format";
 
 interface MySpaceClientProps {
   bookings: Booking[];
+}
+
+function BookingCountdown({
+  createdAt,
+  onExpire,
+}: {
+  createdAt: string | Date;
+  onExpire: () => void;
+}) {
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const expireTime = new Date(createdAt).getTime() + 10 * 60 * 1000;
+    
+    function update() {
+      const now = Date.now();
+      const diff = Math.floor((expireTime - now) / 1000);
+      if (diff <= 0) {
+        setTimeLeft(0);
+        onExpire();
+      } else {
+        setTimeLeft(diff);
+      }
+    }
+    
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [createdAt, onExpire]);
+
+  if (timeLeft <= 0) return null;
+
+  const m = Math.floor(timeLeft / 60);
+  const s = timeLeft % 60;
+  const formatted = `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+
+  return (
+    <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${timeLeft <= 120 ? "animate-pulse bg-red-50 text-red-600" : "bg-orange-50 text-orange-600"}`}>
+      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      {formatted}
+    </div>
+  );
 }
 
 export default function MySpaceClient({ bookings }: MySpaceClientProps) {
@@ -154,6 +197,12 @@ export default function MySpaceClient({ bookings }: MySpaceClientProps) {
                             >
                               {payment.label}
                             </span>
+                            {isPending && needsPayment && (
+                              <BookingCountdown 
+                                createdAt={booking.created_at} 
+                                onExpire={() => router.refresh()} 
+                              />
+                            )}
                           </div>
                           <span className="text-xs font-bold text-slate-400">
                             Booking ID: {booking.id.slice(0, 8).toUpperCase()}

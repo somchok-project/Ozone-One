@@ -64,12 +64,15 @@ export default function BoothDetail({ booth }: BoothDetailProps) {
 
   const days = useMemo(() => {
     if (!startDate || !endDate) return 0;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    if (startDate === endDate) return 1; // Single-day booking
+    const [sy, sm, sd] = startDate.split("-").map(Number);
+    const [ey, em, ed] = endDate.split("-").map(Number);
+    const start = new Date(sy!, sm! - 1, sd);
+    const end = new Date(ey!, em! - 1, ed);
     const diff = Math.ceil(
       (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
     );
-    return diff > 0 ? diff : 0;
+    return diff > 0 ? diff + 1 : 0; // +1 for inclusive counting
   }, [startDate, endDate]);
 
   const totalPrice = days * booth.price;
