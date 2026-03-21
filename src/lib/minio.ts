@@ -55,3 +55,8 @@ export async function uploadToMinio(
     const endpoint = process.env.MINIO_ENDPOINT ?? "http://127.0.0.1:9000";
     return `${endpoint}/${MINIO_BUCKET}/${objectName}`;
 }
+
+/** Delete an object from Minio */
+export async function deleteFromMinio(objectName: string): Promise<void> {
+    await minio.removeObject(MINIO_BUCKET, objectName);
+}

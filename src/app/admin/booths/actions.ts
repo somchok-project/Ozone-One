@@ -2,6 +2,7 @@
 
 import { db } from "@/server/db";
 import { revalidatePath } from "next/cache";
+import { uploadToMinio, deleteFromMinio } from "@/lib/minio";
 
 interface RawBoothItem {
   id: string;
@@ -40,8 +41,8 @@ async function saveBoothItems(boothId: string, items: RawBoothItem[]) {
 }
 
 export async function getBooths(params?: { q?: string; status?: string }) {
-  const query = params?.q || "";
-  const statusFilter = params?.status || "all";
+  const query = params?.q ?? "";
+  const statusFilter = params?.status ?? "all";
   const now = new Date();
 
   const activeStatuses = ["CONFIRMED", "PENDING"] as const;
@@ -129,6 +130,61 @@ export async function getBooths(params?: { q?: string; status?: string }) {
     nextBooking: nextBookingMap.get(b.id) ?? null,
   }));
 }
+
+async function processBoothImages(boothId: string, formData: FormData) {
+  // Handle deletions
+  const deletedImagesRaw = formData.get("deleted_images") as string;
+  if (deletedImagesRaw) {
+    try {
+      const deletedImageIds = JSON.parse(deletedImagesRaw) as string[];
+      if (Array.isArray(deletedImageIds) && deletedImageIds.length > 0) {
+        const imagesToDelete = await db.image.findMany({
+          where: { id: { in: deletedImageIds }, booth_id: boothId }
+        });
+
+        for (const img of imagesToDelete) {
+          try {
+            const url = new URL(img.path);
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            pathParts.shift(); // remove bucket name
+            const objectName = pathParts.join('/');
+            await deleteFromMinio(objectName);
+          } catch (e) {
+            console.error("Failed to delete from Minio:", img.path, e);
+          }
+        }
+
+        await db.image.deleteMany({
+          where: { id: { in: deletedImageIds }, booth_id: boothId }
+        });
+      }
+    } catch (e) {
+      console.error("Error processing deleted images:", e);
+    }
+  }
+
+  // Handle new uploads
+  const newImages = formData.getAll("new_images") as File[];
+  for (const file of newImages) {
+    if (file && file.size > 0 && file.name !== "undefined") {
+      try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const objectName = `booths/${boothId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const imageUrl = await uploadToMinio(objectName, buffer, file.type || "application/octet-stream");
+
+        await db.image.create({
+          data: {
+            booth_id: boothId,
+            path: imageUrl,
+          }
+        });
+      } catch (e) {
+        console.error("Failed to upload image:", file.name, e);
+      }
+    }
+  }
+}
+
 export async function createBoothAction(formData: FormData) {
   try {
     const name = formData.get("name") as string;
@@ -180,6 +236,7 @@ export async function createBoothAction(formData: FormData) {
     });
 
     await saveBoothItems(booth.id, parseBoothItems(boothItemsRaw));
+    await processBoothImages(booth.id, formData);
 
     revalidatePath("/admin/booths");
     return { success: true };
@@ -241,6 +298,7 @@ export async function updateBoothAction(id: string, formData: FormData) {
     });
 
     await saveBoothItems(id, parseBoothItems(boothItemsRaw));
+    await processBoothImages(id, formData);
 
     revalidatePath("/admin/booths");
     return { success: true };

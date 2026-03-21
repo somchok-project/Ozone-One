@@ -13,7 +13,7 @@ export default async function EditBoothPage(props: {
 
   const booth = await db.booth.findUnique({
     where: { id: boothId },
-    include: { booth_items: true },
+    include: { booth_items: true, images: { select: { id: true, path: true } } },
   });
 
   if (!booth) {

@@ -15,6 +15,7 @@ import {
   Store,
   Settings2,
   CheckCircle2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -81,6 +82,7 @@ export interface BoothInitialData {
   is_available?: boolean;
   zone_id?: string | null;
   user_id?: string | null;
+  images?: { id: string; path: string }[];
   // 3D position fields
   position_x?: number | null;
   position_y?: number | null;
@@ -140,6 +142,37 @@ export function BoothForm({ admins, zones, initialData, allBooths = [] }: BoothF
   const [posZ, setPosZ] = useState<number>(Number(initialData?.position_z ?? 0));
   const [rotY, setRotY] = useState<number>(Number(initialData?.rotation_y ?? 0));
 
+  // Multiple Image state
+  const [existingImages, setExistingImages] = useState<{ id: string; path: string }[]>(
+    initialData?.images ?? []
+  );
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    setNewImages((prev) => [...prev, ...files]);
+    
+    const newPreviewUrls = files.map(file => URL.createObjectURL(file));
+    setPreviewUrls((prev) => [...prev, ...newPreviewUrls]);
+  };
+
+  const removeNewImage = (indexToRemove: number) => {
+    setNewImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
+    setPreviewUrls(prev => {
+      const url = prev[indexToRemove];
+      if (url) URL.revokeObjectURL(url);
+      return prev.filter((_, idx) => idx !== indexToRemove);
+    });
+  };
+
+  const removeExistingImage = (imageId: string) => {
+    setDeletedImageIds(prev => [...prev, imageId]);
+    setExistingImages(prev => prev.filter(img => img.id !== imageId));
+  };
+
   const statusOptions = [
     { value: "true", label: "ว่าง (พร้อมให้เช่า)" },
     { value: "false", label: "ไม่ว่าง (ปิดปรับปรุง/จองแล้ว)" },
@@ -149,6 +182,14 @@ export function BoothForm({ admins, zones, initialData, allBooths = [] }: BoothF
     startTransition(async () => {
       // Ensure 3D items are explicitly set in form data before submit
       formData.set("booth_items", JSON.stringify(boothItems));
+
+      // Append new images and deleted image IDs
+      newImages.forEach(file => {
+        formData.append("new_images", file);
+      });
+      if (deletedImageIds.length > 0) {
+        formData.set("deleted_images", JSON.stringify(deletedImageIds));
+      }
 
       let res;
       if (isEditing && initialData?.id) {
@@ -299,6 +340,67 @@ export function BoothForm({ admins, zones, initialData, allBooths = [] }: BoothF
 
         {/* Right Column: Settings & Tips */}
         <div className="space-y-6">
+          {/* Multiple Image Upload */}
+          <Card className="overflow-hidden rounded-[2rem] border border-slate-100/60 bg-white shadow-sm ring-1 ring-slate-900/5">
+            <CardHeader className="border-b border-slate-50/50 bg-slate-50/30 px-6 py-5">
+              <CardTitle className="flex items-center gap-3 text-sm font-bold uppercase tracking-wider text-slate-500">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-100/50 text-blue-600">
+                  <Camera className="h-3.5 w-3.5" />
+                </div>
+                รูปภาพบูธ
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-6">
+              <div className="flex flex-col gap-4">
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 py-6 text-slate-500 hover:bg-slate-100 transition-colors">
+                  <Camera className="h-6 w-6 text-slate-400" />
+                  <span className="text-xs font-semibold">อัปโหลดรูปภาพเพิ่มเติม</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
+                </label>
+                
+                {/* Image Previews */}
+                {(existingImages.length > 0 || previewUrls.length > 0) && (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {/* Existing Images */}
+                    {existingImages.map((img) => (
+                      <div key={img.id} className="relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img.path} alt="Booth Image" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(img.id)}
+                          className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/80 text-white backdrop-blur transition-colors hover:bg-red-600"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {/* New Images */}
+                    {previewUrls.map((url, idx) => (
+                      <div key={`new-${idx}`} className="relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={`New Booth Image ${idx}`} className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeNewImage(idx)}
+                          className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/80 text-white backdrop-blur transition-colors hover:bg-red-600"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="overflow-hidden rounded-[2rem] border border-slate-100/60 bg-white shadow-sm ring-1 ring-slate-900/5">
             <CardHeader className="border-b border-slate-50/50 bg-slate-50/30 px-6 py-5">
               <CardTitle className="flex items-center gap-3 text-sm font-bold uppercase tracking-wider text-slate-500">
