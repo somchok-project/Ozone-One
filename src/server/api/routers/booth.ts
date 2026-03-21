@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { cleanupExpiredBookings } from "@/server/utils/cleanupExpiredBookings";
 
 export const boothRouter = createTRPCRouter({
   getAll: publicProcedure
     .input(z.object({ zoneId: z.string().optional() }).optional())
     .query(async ({ ctx, input }) => {
+      await cleanupExpiredBookings();
       const now = new Date();
       const booths = await ctx.db.booth.findMany({
         where: {

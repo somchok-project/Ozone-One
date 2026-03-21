@@ -4,6 +4,7 @@ import {
     protectedProcedure,
 } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { cleanupExpiredBookings } from "@/server/utils/cleanupExpiredBookings";
 
 export const bookingRouter = createTRPCRouter({
     create: protectedProcedure
@@ -15,6 +16,17 @@ export const bookingRouter = createTRPCRouter({
             }),
         )
         .mutation(async ({ ctx, input }) => {
+            // 1. Verify user still exists in DB (fixes foreign key errors if DB was reset)
+            const userExists = await ctx.db.user.findUnique({
+                where: { id: ctx.session.user.id },
+            });
+            if (!userExists) {
+                throw new TRPCError({
+                    code: "UNAUTHORIZED",
+                    message: "เซสชันหมดอายุหรือไม่พบผู้ใช้ (อาจมีการรีเซ็ตฐานข้อมูล) กรุณาล็อกอินใหม่",
+                });
+            }
+
             const booth = await ctx.db.booth.findUniqueOrThrow({
                 where: { id: input.booth_id },
             });
@@ -29,10 +41,10 @@ export const bookingRouter = createTRPCRouter({
             const startDate = new Date(input.start_date);
             const endDate = new Date(input.end_date);
 
-            if (endDate <= startDate) {
+            if (endDate < startDate) {
                 throw new TRPCError({
                     code: "BAD_REQUEST",
-                    message: "วันสิ้นสุดต้องมากกว่าวันเริ่ม",
+                    message: "วันสิ้นสุดต้องมากกว่าหรือเท่ากับวันเริ่ม",
                 });
             }
 
@@ -57,9 +69,10 @@ export const bookingRouter = createTRPCRouter({
                 });
             }
 
-            const days = Math.ceil(
+            const diffDays = Math.ceil(
                 (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
             );
+            const days = diffDays === 0 ? 1 : diffDays + 1; // inclusive counting
             const totalPrice = booth.price * days;
 
             return ctx.db.booking.create({
@@ -100,6 +113,7 @@ export const bookingRouter = createTRPCRouter({
         }),
 
     getMyBookings: protectedProcedure.query(async ({ ctx }) => {
+        await cleanupExpiredBookings();
         return ctx.db.booking.findMany({
             where: { user_id: ctx.session.user.id },
             include: { booth: { include: { images: true } } },

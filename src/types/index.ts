@@ -126,6 +126,7 @@ export interface Booking {
   payment_status: PaymentStatus | string;
   booking_status: BookingStatus | string;
   payment_slip_url: string | null;
+  created_at: Date | string;
   user_id?: string;
   user?: User;
   booth_id?: string;
