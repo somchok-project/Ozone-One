@@ -70,6 +70,7 @@ export const boothRouter = createTRPCRouter({
             },
             select: { start_date: true, end_date: true },
           },
+          booth_items: true,
         },
       });
     }),

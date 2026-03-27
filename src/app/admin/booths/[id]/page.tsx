@@ -13,6 +13,7 @@ import {
   CalendarX2,
   CalendarCheck,
   CalendarClock,
+  Box, // <-- เพิ่ม icon นี้เผื่อใช้ตกแต่ง
 } from "lucide-react";
 import { db } from "@/server/db";
 import { Card } from "@/components/ui";
@@ -22,7 +23,7 @@ import {
   getBookingStatusColor,
 } from "@/lib/utils/bookingStatus";
 import BookingCalendar from "./_components/BookingCalendar";
-
+import BoothViewer3D from "../_components/BoothViewer3D";
 export default async function BoothDetailPage(
   props: {
     params: Promise<{ id: string }>;
@@ -35,6 +36,7 @@ export default async function BoothDetailPage(
       zone: true,
       user: { select: { name: true, email: true } },
       images: { take: 1 },
+      booth_items: true, // <-- ดึงข้อมูลไอเทมในบูธมาด้วย
       bookings: {
         include: {
           user: { select: { name: true, email: true } },
@@ -79,7 +81,7 @@ export default async function BoothDetailPage(
       new Date(b.start_date) > now
   ).length;
 
-  // Serialize for client component (Decimal → number)
+  // Serialize for client component
   const bookingsForCalendar = booth.bookings.map((b) => ({
     id: b.id,
     start_date: b.start_date.toISOString(),
@@ -92,6 +94,15 @@ export default async function BoothDetailPage(
     payment_status: b.payment_status as "PENDING" | "SUCCESS" | "CANCEL",
     total_price: b.total_price,
     user: { name: b.user.name, email: b.user.email },
+  }));
+
+  // แปลงข้อมูลไอเทมสำหรับส่งเข้า 3D Viewer
+  const viewerItems = booth.booth_items.map((item) => ({
+    id: item.id,
+    type: item.item_type,
+    position: [item.position_x, item.position_y, item.position_z] as [number, number, number],
+    rotation: [item.rotation_x, item.rotation_y, item.rotation_z] as [number, number, number],
+    color: item.color,
   }));
 
   return (
@@ -238,7 +249,7 @@ export default async function BoothDetailPage(
         </Card>
 
         {/* ── Booking History Table ── */}
-        <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
+        <Card className="mb-8 rounded-3xl border-none shadow-sm overflow-hidden">
           <div className="border-b border-slate-50 px-6 py-5">
             <h2 className="flex items-center gap-2 text-lg font-black text-slate-900">
               <CalendarDays className="h-5 w-5 text-slate-400" />
@@ -258,28 +269,17 @@ export default async function BoothDetailPage(
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="bg-slate-50/50">
-                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      ลูกค้า
-                    </th>
-                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      ช่วงวันที่
-                    </th>
-                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      จำนวนวัน
-                    </th>
-                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      ยอดชำระ
-                    </th>
-                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      สถานะ
-                    </th>
+                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">ลูกค้า</th>
+                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">ช่วงวันที่</th>
+                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">จำนวนวัน</th>
+                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">ยอดชำระ</th>
+                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">สถานะ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {booth.bookings.map((b) => {
                     const days = Math.ceil(
-                      (new Date(b.end_date).getTime() -
-                        new Date(b.start_date).getTime()) /
+                      (new Date(b.end_date).getTime() - new Date(b.start_date).getTime()) /
                         (1000 * 60 * 60 * 24)
                     );
                     return (
@@ -290,9 +290,7 @@ export default async function BoothDetailPage(
                               {(b.user.name ?? b.user.email).charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-slate-900">
-                                {b.user.name ?? "-"}
-                              </p>
+                              <p className="text-sm font-semibold text-slate-900">{b.user.name ?? "-"}</p>
                               <p className="text-[11px] text-slate-400">{b.user.email}</p>
                             </div>
                           </div>
@@ -301,17 +299,13 @@ export default async function BoothDetailPage(
                           {formatThaiDate(new Date(b.start_date))} — {formatThaiDate(new Date(b.end_date))}
                         </td>
                         <td className="px-6 py-4">
-                          <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-medium text-slate-600">
-                            {days} วัน
-                          </span>
+                          <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-medium text-slate-600">{days} วัน</span>
                         </td>
                         <td className="px-6 py-4 text-sm font-black text-slate-900">
                           {formatCurrency(b.total_price)}
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex rounded-xl px-3 py-1 text-xs font-bold ${getBookingStatusColor(b.booking_status)}`}
-                          >
+                          <span className={`inline-flex rounded-xl px-3 py-1 text-xs font-bold ${getBookingStatusColor(b.booking_status)}`}>
                             {getBookingStatusLabel(b.booking_status)}
                           </span>
                         </td>
@@ -323,6 +317,31 @@ export default async function BoothDetailPage(
             </div>
           )}
         </Card>
+
+        {/* ── 3D Viewer Section (ใหม่) ── */}
+        <Card className="rounded-3xl border-none shadow-sm overflow-hidden bg-white">
+          <div className="border-b border-slate-50 px-6 py-5 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-black text-slate-900">
+              <Box className="h-5 w-5 text-orange-500" />
+              การจัดวางพื้นที่บูธ (3D Layout)
+            </h2>
+            <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+              ขนาด {booth.dimension}
+            </span>
+          </div>
+          <div className="p-6 bg-[#FAFAFA]">
+            {viewerItems.length > 0 ? (
+              <BoothViewer3D items={viewerItems} dimension={booth.dimension} />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[300px] rounded-2xl border-2 border-dashed border-slate-200 bg-white">
+                <Box className="h-10 w-10 text-slate-300 mb-3" />
+                <p className="text-sm font-semibold text-slate-500">ยังไม่มีการตกแต่งพื้นที่บูธนี้</p>
+                <p className="text-xs text-slate-400 mt-1">คุณสามารถเข้าไปเพิ่มได้ในเมนู "แก้ไขข้อมูล"</p>
+              </div>
+            )}
+          </div>
+        </Card>
+
       </div>
     </div>
   );

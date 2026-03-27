@@ -28,7 +28,7 @@ model User {
     accounts Account[]
     sessions Session[]
     bookings Booking[]
-    reviews  Review[]g
+    reviews  Review[]
 
     // บูธที่ User คนนี้ (Admin) เป็นคนสร้างหรือดูแล
     booths Booth[]

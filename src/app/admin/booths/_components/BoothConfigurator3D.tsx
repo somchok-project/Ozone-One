@@ -573,7 +573,6 @@ export default function BoothConfigurator3D({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "none">("translate");
   const [showItemList, setShowItemList] = useState(false);
-
   const boothSize = parseDimension(dimension);
   const boundsW = boothSize.w / 2 - 0.3;
   const boundsD = boothSize.d / 2 - 0.3;
@@ -591,15 +590,18 @@ export default function BoothConfigurator3D({
         rotation: [0, 0, 0],
         color: ITEM_COLORS[type],
       };
-      setItems((prev) => {
-        const next = [...prev, newItem];
-        onChange?.(next);
-        return next;
-      });
+      
+      // 1. สร้าง Array ใหม่โดยเอา items เดิมมาต่อกับ newItem
+      const nextItems = [...items, newItem]; 
+      
+      // 2. สั่งอัปเดตแยกกันทีละบรรทัด (ห้ามเอาไปซ้อนใน setItems)
+      setItems(nextItems);       // อัปเดต State ของตัวเอง
+      onChange?.(nextItems);     // ส่งข้อมูลกลับไปให้ Component แม่ (สำคัญมาก ไม่งั้นแม่จะไม่ได้ข้อมูล)
+      
       setSelectedId(newItem.id);
       setTransformMode("translate"); 
     },
-    [onChange],
+    [items, onChange], // <-- อย่าลืมใส่ items ตรงนี้ด้วยครับ
   );
 
   const removeSelected = useCallback(() => {
@@ -633,15 +635,16 @@ export default function BoothConfigurator3D({
 
   const handleTransform = useCallback(
     (id: string, position: [number, number, number], rotation: [number, number, number]) => {
-      setItems((prev) => {
-        const next = prev.map((item) =>
-          item.id === id ? { ...item, position, rotation } : item,
-        );
-        onChange?.(next);
-        return next;
-      });
+      // 1. คำนวณข้อมูลใหม่ไว้ข้างนอกก่อน โดยใช้ตัวแปร items ปัจจุบัน
+      const nextItems = items.map((item) =>
+        item.id === id ? { ...item, position, rotation } : item,
+      );
+      
+      // 2. สั่งอัปเดตแยกกันทีละบรรทัด
+      setItems(nextItems);
+      onChange?.(nextItems);
     },
-    [onChange],
+    [items, onChange], // <-- สำคัญ: อย่าลืมแก้ตรงนี้ให้มี items ด้วยนะครับ
   );
 
   return (

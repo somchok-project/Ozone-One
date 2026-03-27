@@ -16,13 +16,13 @@ export function BoothHeader() {
 
             <div className="flex items-center gap-3">
                 <Link href="/admin/booths/layout-3d">
-                    <Button className="h-12 px-6 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm gap-2 transition-all active:scale-95">
-                        <MapPinned className="h-5 w-5 text-blue-500" />
+                    <Button className="h-12 px-6 rounded-2xl bg-orange-300 hover:bg-orange-700 shadow-lg shadow-orange-200 gap-2 transition-all active:scale-95 cursor-pointer">
+                        <MapPinned className="h-5 w-5 text-white-500" />
                         จัดผัง 3D
                     </Button>
                 </Link>
                 <Link href="/admin/booths/add">
-                    <Button className="h-12 px-6 rounded-2xl bg-orange-500 hover:bg-orange-600 shadow-lg shadow-orange-200 gap-2 transition-all active:scale-95">
+                    <Button className="h-12 px-6 rounded-2xl bg-orange-300 hover:bg-orange-700 shadow-lg shadow-orange-200 gap-2 transition-all active:scale-95 cursor-pointer">
                         <Plus className="h-5 w-5" />
                         เพิ่มบูธใหม่
                     </Button>
