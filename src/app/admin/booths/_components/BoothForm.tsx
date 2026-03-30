@@ -32,18 +32,6 @@ import { type BoothItem } from "@/constants/boothItems";
 
 // ─── Dynamic Imports ────────────────────────────────────────────────────────
 
-const BoothConfigurator3D = dynamic(() => import("./BoothConfigurator3D"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-[500px] w-full flex-col items-center justify-center gap-3 rounded-[2rem] border border-slate-100 bg-slate-50">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"></div>
-      <span className="text-sm font-semibold tracking-wide text-slate-400">
-        กำลังโหลด 3D Workspace...
-      </span>
-    </div>
-  ),
-});
-
 const MarketLayout3D = dynamic(() => import("./MarketLayout3D"), {
   ssr: false,
   loading: () => (
@@ -434,21 +422,6 @@ export function BoothForm({ admins, zones, initialData, allBooths = [] }: BoothF
             </CardContent>
           </Card>
 
-          {/* Tips Card */}
-          <div className="relative overflow-hidden rounded-[2rem] border border-orange-100/50 bg-gradient-to-br from-orange-50/80 to-amber-50/30 p-6 shadow-sm">
-            <div className="absolute -right-4 -top-4 text-orange-200/30">
-              <Store className="h-24 w-24" />
-            </div>
-            <div className="relative z-10">
-              <div className="mb-2 flex items-center gap-2">
-                <Camera className="h-4 w-4 text-orange-600" />
-                <span className="font-bold text-orange-800">3D Configurator</span>
-              </div>
-              <p className="text-xs leading-relaxed text-orange-700/80">
-                คุณสามารถจัดเตรียมเฟอร์นิเจอร์ เช่น โต๊ะ หรือเก้าอี้ ให้ลูกค้าเห็นภาพผ่าน <strong>3D Workspace</strong> ด้านล่างได้เลย เมื่อจัดเสร็จแล้วข้อมูลจะถูกบันทึกพร้อมกับฟอร์ม
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -513,28 +486,7 @@ export function BoothForm({ admins, zones, initialData, allBooths = [] }: BoothF
         );
       })()}
 
-      {/* ─── 3D Booth Configurator (Full Width) ─── */}
-      <Card className="mt-8 overflow-hidden rounded-[2rem] border border-slate-100/60 bg-white shadow-sm ring-1 ring-slate-900/5">
-        <CardHeader className="flex flex-col gap-1 border-b border-slate-50 px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="flex items-center gap-3 text-lg font-bold text-slate-800">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white">
-              <Camera className="h-4 w-4" />
-            </div>
-            จัด Layout บูธ (3D)
-          </CardTitle>
-          <span className="text-xs font-medium text-slate-400">
-            คลิกที่ไอเทมเพื่อขยับ • เลื่อนเมาส์เพื่อหมุนกล้อง
-          </span>
-        </CardHeader>
-        <CardContent className="p-0 sm:p-2 sm:pb-2">
-          <BoothConfigurator3D
-            initialItems={boothItems}
-            onChange={setBoothItems}
-            inputName="booth_items"
-            dimension={dimension}
-          />
-        </CardContent>
-      </Card>
+
     </form>
   );
 }
