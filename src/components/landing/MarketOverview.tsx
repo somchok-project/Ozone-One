@@ -1,5 +1,6 @@
 import { MapPin, User, Star, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { api } from "@/trpc/server";
 
 export default async function MarketOverview() {
@@ -107,8 +108,8 @@ export default async function MarketOverview() {
             </p>
           </div>
 
-          {/* Card 4: Stat (Rating) - Dark/Contrast */}
-          <div className="group relative flex flex-col justify-between overflow-hidden rounded-3xl bg-gray-900 p-8 text-white md:col-span-1 md:row-span-1">
+          {/* Card 4: Stat (Rating) - Dark/Contrast — clickable */}
+          <Link href="/customer/reviews" className="group relative flex flex-col justify-between overflow-hidden rounded-3xl bg-gray-900 p-8 text-white transition-all hover:shadow-xl hover:ring-2 hover:ring-orange-500/30 md:col-span-1 md:row-span-1">
             <div className="absolute top-0 right-0 p-3 opacity-10">
               <Star size={100} strokeWidth={1} />
             </div>
@@ -128,7 +129,7 @@ export default async function MarketOverview() {
               <span>อ่านรีวิว</span>
               <ArrowUpRight size={16} />
             </div>
-          </div>
+          </Link>
 
           {/* Card 5: Image with Overlay */}
           <div className="group relative overflow-hidden rounded-3xl md:col-span-1 md:row-span-1">
