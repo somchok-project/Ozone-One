@@ -21,7 +21,7 @@ export default async function BoothsPage({ searchParams }: BoothsPageProps) {
   const params = await searchParams;
 
   const [booths, zones] = await Promise.all([
-    api.booth.getAll({ zoneId: params.zone }),
+    api.booth.getAll(),
     api.booth.getZones(),
   ]);
 

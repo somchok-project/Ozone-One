@@ -7,7 +7,9 @@ import {
   Footer,
 } from "@/components/landing";
 
-export default async function CustomerDashboard() {
+export default async function CustomerDashboard(props: {
+  searchParams?: Promise<{ zone?: string }>;
+}) {
   const session = await auth();
 
   if (!session?.user) {
@@ -18,11 +20,13 @@ export default async function CustomerDashboard() {
     redirect("/admin");
   }
 
+  const searchParams = await props.searchParams;
+
   return (
     <div className="min-h-screen bg-stone-50 font-sans text-gray-800">
       <HeroSection />
       <MarketOverview />
-      <FeaturedBooths />
+      <FeaturedBooths searchParams={searchParams} />
       <Footer />
     </div>
   );
